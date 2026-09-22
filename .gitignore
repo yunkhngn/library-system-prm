@@ -1,0 +1,60 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Editors & IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.swp
+*.swo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Docker local data
+pgdata/
+
+# Java / Maven
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+*.class
+*.war
+*.ear
+*.log
+
+# Python / FastAPI
+ai-service/__pycache__/
+ai-service/*/__pycache__/
+ai-service/*/*/__pycache__/
+*.py[cod]
+*$py.class
+ai-service/.pytest_cache/
+ai-service/.venv/
+ai-service/venv/
+ai-service/env/
+ai-service/build/
+ai-service/dist/
+*.egg-info/
+
+# Flutter / Dart
+client/.dart_tool/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/.packages
+client/build/
+client/.pub-cache/
+client/.pub/
+client/ios/Pods/
+client/ios/.symlinks/
+client/ios/Flutter/Flutter.framework
+client/ios/Flutter/Flutter.podspec
+client/android/.gradle/
+client/android/local.properties

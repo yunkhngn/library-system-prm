@@ -1,0 +1,10 @@
+.dart_tool/
+.packages
+build/
+.pub-cache/
+.pub/
+ios/Pods/
+android/.gradle/
+.git
+.gitignore
+*.log
