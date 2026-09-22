@@ -133,7 +133,17 @@ The project is organized as a modular monorepo composed of three core services a
 
 ---
 
-### Option 1: Running with Docker Compose (Recommended)
+### Option 1: Run with Pre-built Images from CI/CD (Recommended for Low Disk Space)
+
+If you don't want to build Docker images locally (saving disk space & time):
+```bash
+docker compose -f docker-compose.local.yml pull
+docker compose -f docker-compose.local.yml up -d
+```
+
+---
+
+### Option 2: Build & Run Locally with Docker Compose
 
 1. **Clone and setup environment variables:**
    ```bash
@@ -141,20 +151,14 @@ The project is organized as a modular monorepo composed of three core services a
    # Edit .env if you wish to customize ports or credentials
    ```
 
-2. **Start all services:**
+2. **Build and start all services:**
    ```bash
-   docker compose up -d
+   docker compose up -d --build
    ```
-
-3. **Service URLs:**
-   - **Flutter Web Client:** `http://localhost:3000`
-   - **Spring Boot API:** `http://localhost:8080`
-   - **FastAPI AI Service:** `http://localhost:8001` (Docs at `http://localhost:8001/docs`)
-   - **PostgreSQL:** `localhost:5432`
 
 ---
 
-### Option 2: Running Services Individually
+### Option 3: Running Services Individually
 
 #### 1. Start PostgreSQL
 ```bash

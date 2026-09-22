@@ -1,0 +1,78 @@
+name: CI/CD Pipeline (Main Branch Only)
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  REGISTRY: git.lim-dxlab.space
+  OWNER: tsubasaozora
+
+jobs:
+  # ============================================================================
+  # 1. Build & Push Spring Boot Backend Docker Image
+  # ============================================================================
+  build-backend:
+    name: Build & Push Backend Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Gitea Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ gitea.actor }}" --password-stdin
+
+      - name: Build & Push Backend Docker Image
+        run: |
+          IMAGE_NAME="${{ env.REGISTRY }}/${{ env.OWNER }}/backend:latest"
+          docker build -t "$IMAGE_NAME" ./backend
+          docker push "$IMAGE_NAME"
+
+  # ============================================================================
+  # 2. Build & Push Python FastAPI AI Service Docker Image
+  # ============================================================================
+  build-ai-service:
+    name: Build & Push AI Service Container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Gitea Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ gitea.actor }}" --password-stdin
+
+      - name: Build & Push AI Service Docker Image
+        run: |
+          IMAGE_NAME="${{ env.REGISTRY }}/${{ env.OWNER }}/ai-service:latest"
+          docker build -t "$IMAGE_NAME" ./ai-service
+          docker push "$IMAGE_NAME"
+
+  # ============================================================================
+  # 3. Build Flutter Android APK for Mobile Testing
+  # ============================================================================
+  build-flutter-apk:
+    name: Build Flutter Android APK
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cirruslabs/flutter:stable
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        working-directory: ./client
+        run: flutter pub get
+
+      - name: Build Release APK
+        working-directory: ./client
+        run: flutter build apk --release
+
+      - name: Upload APK to Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: client/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14
