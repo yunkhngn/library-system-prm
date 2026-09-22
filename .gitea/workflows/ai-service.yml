@@ -1,0 +1,30 @@
+name: AI Service CI/CD (FastAPI)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai-service/**'
+
+env:
+  REGISTRY: git.lim-dxlab.space
+  OWNER: tsubasaozora
+
+jobs:
+  build-and-push-ai-service:
+    name: Build & Push AI Service Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to Gitea Container Registry
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u "${{ github.actor }}" --password-stdin
+
+      - name: Build & Push Docker Image
+        run: |
+          IMAGE_NAME="${{ env.REGISTRY }}/${{ env.OWNER }}/ai-service:latest"
+          docker build -t "$IMAGE_NAME" ./ai-service
+          docker push "$IMAGE_NAME"

@@ -1,0 +1,33 @@
+name: Client CI/CD (Flutter)
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'client/**'
+
+jobs:
+  build-flutter-apk:
+    name: Build Flutter Android APK
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/cirruslabs/flutter:stable
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        working-directory: ./client
+        run: flutter pub get
+
+      - name: Build Release APK
+        working-directory: ./client
+        run: flutter build apk --release
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: app-release-apk
+          path: client/build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 14

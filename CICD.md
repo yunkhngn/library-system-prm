@@ -42,17 +42,15 @@ Quy trình CI/CD được thiết kế để giải quyết bài toán: **Tối 
 
 ---
 
-## 2. Cấu hình Workflow (`.gitea/workflows/main.yml`)
+## 2. Cấu hình Workflows (Tách riêng theo Path Filtering)
 
-Workflow được kích hoạt tự động mỗi khi có commit mới được push hoặc merge vào nhánh **`main`**.
+Mỗi service sở hữu một workflow riêng biệt, chỉ kích hoạt khi có thay đổi trong thư mục tương ứng trên nhánh **`main`** (tránh build thừa các service không liên quan):
 
-### Chi tiết các Job:
-
-| Job | Nhiệm vụ | Output |
-|---|---|---|
-| **`build-backend`** | Build image Spring Boot (Java 21) theo multi-stage Dockerfile | `git.lim-dxlab.space/tsubasaozora/backend:latest` |
-| **`build-ai-service`** | Build image Python FastAPI (OpenCV / AI Face Recognition) | `git.lim-dxlab.space/tsubasaozora/ai-service:latest` |
-| **`build-flutter-apk`** | Dùng Flutter container để build bundle release cho Android | `app-release.apk` (Lưu tại Gitea Actions Artifacts trong 14 ngày) |
+| Workflow File | Path Trigger | Nhiệm vụ | Output |
+|---|---|---|---|
+| **`.gitea/workflows/backend.yml`** | `backend/**` | Build image Spring Boot (Java 21) | `git.lim-dxlab.space/tsubasaozora/backend:latest` |
+| **`.gitea/workflows/ai-service.yml`** | `ai-service/**` | Build image Python FastAPI | `git.lim-dxlab.space/tsubasaozora/ai-service:latest` |
+| **`.gitea/workflows/client.yml`** | `client/**` | Build release Android APK qua Flutter SDK | `app-release.apk` (Lưu tại Gitea Artifacts trong 14 ngày) |
 
 ---
 
