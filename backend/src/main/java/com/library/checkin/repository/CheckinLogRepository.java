@@ -130,4 +130,79 @@ public interface CheckinLogRepository extends JpaRepository<CheckinLog, UUID> {
             @Param("q") String q,
             Pageable pageable
     );
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT cl FROM CheckinLog cl WHERE cl.checkOutTime IS NULL")
+    java.util.List<CheckinLog> findAllOpenSessionsForUpdate();
+
+    @Query("SELECT COUNT(cl) FROM CheckinLog cl WHERE cl.checkInTime >= :from AND cl.checkInTime < :to")
+    long countTotalCheckIns(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Query("SELECT COUNT(cl) FROM CheckinLog cl WHERE cl.checkOutTime >= :from AND cl.checkOutTime < :to")
+    long countTotalCheckOuts(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Query(value = "SELECT AVG(EXTRACT(EPOCH FROM (check_out_time - check_in_time))) FROM checkin_logs WHERE check_out_time >= :from AND check_out_time < :to", nativeQuery = true)
+    Double getAverageStaySeconds(@Param("from") OffsetDateTime from, @Param("to") OffsetDateTime to);
+
+    @Query(value = """
+        SELECT 
+            date_trunc('day', check_in_time AT TIME ZONE :tz) AS bucket_start,
+            COUNT(*) AS total_in,
+            COUNT(CASE WHEN method = 'FACE' THEN 1 END) AS face_in,
+            COUNT(CASE WHEN method = 'QR' THEN 1 END) AS qr_in,
+            COUNT(CASE WHEN method = 'MANUAL' THEN 1 END) AS manual_in
+        FROM checkin_logs
+        WHERE check_in_time >= :from AND check_in_time < :to
+        GROUP BY bucket_start
+    """, nativeQuery = true)
+    java.util.List<Object[]> aggregateCheckInsByDay(
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to,
+            @Param("tz") String tz
+    );
+
+    @Query(value = """
+        SELECT 
+            date_trunc('hour', check_in_time AT TIME ZONE :tz) AS bucket_start,
+            COUNT(*) AS total_in,
+            COUNT(CASE WHEN method = 'FACE' THEN 1 END) AS face_in,
+            COUNT(CASE WHEN method = 'QR' THEN 1 END) AS qr_in,
+            COUNT(CASE WHEN method = 'MANUAL' THEN 1 END) AS manual_in
+        FROM checkin_logs
+        WHERE check_in_time >= :from AND check_in_time < :to
+        GROUP BY bucket_start
+    """, nativeQuery = true)
+    java.util.List<Object[]> aggregateCheckInsByHour(
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to,
+            @Param("tz") String tz
+    );
+
+    @Query(value = """
+        SELECT 
+            date_trunc('day', check_out_time AT TIME ZONE :tz) AS bucket_start,
+            COUNT(*) AS total_out
+        FROM checkin_logs
+        WHERE check_out_time >= :from AND check_out_time < :to
+        GROUP BY bucket_start
+    """, nativeQuery = true)
+    java.util.List<Object[]> aggregateCheckOutsByDay(
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to,
+            @Param("tz") String tz
+    );
+
+    @Query(value = """
+        SELECT 
+            date_trunc('hour', check_out_time AT TIME ZONE :tz) AS bucket_start,
+            COUNT(*) AS total_out
+        FROM checkin_logs
+        WHERE check_out_time >= :from AND check_out_time < :to
+        GROUP BY bucket_start
+    """, nativeQuery = true)
+    java.util.List<Object[]> aggregateCheckOutsByHour(
+            @Param("from") OffsetDateTime from,
+            @Param("to") OffsetDateTime to,
+            @Param("tz") String tz
+    );
 }
