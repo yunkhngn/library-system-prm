@@ -59,7 +59,9 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/login",
                                 "/api/v1/auth/refresh",
-                                "/api/v1/kiosks/token"
+                                "/api/v1/kiosks/token",
+                                "/ws",
+                                "/ws/**"
                         ).permitAll()
                         // General error route
                         .requestMatchers("/error").permitAll()

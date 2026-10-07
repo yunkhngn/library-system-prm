@@ -43,6 +43,9 @@ class HealthAndDocsTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private com.library.checkin.repository.AccessRequestRepository accessRequestRepository;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.library.checkin.repository.VisitorRepository visitorRepository;
+
     @Test
     @DisplayName("Actuator health endpoint should be accessible without authentication")
     void actuatorHealthShouldBeAccessible() throws Exception {

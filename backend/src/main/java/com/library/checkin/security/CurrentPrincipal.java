@@ -11,6 +11,10 @@ public record CurrentPrincipal(
         String role,
         String code
 ) {
+    public UUID getUserId() {
+        return id;
+    }
+
     public boolean isUser() {
         return type == PrincipalType.USER;
     }
