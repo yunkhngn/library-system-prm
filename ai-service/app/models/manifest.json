@@ -1,0 +1,17 @@
+{
+  "modelId": "arcface-512-r100",
+  "modelVersion": "arcface-512-v1",
+  "dimension": 512,
+  "framework": "onnx",
+  "target": "cpu",
+  "similarityThreshold": 0.65,
+  "minDistanceGap": 0.15,
+  "livenessMinScore": 0.90,
+  "license": "Apache-2.0 / MIT compatible",
+  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "preprocessing": {
+    "targetSize": [112, 112],
+    "normalize": "mean_std",
+    "colorFormat": "RGB"
+  }
+}

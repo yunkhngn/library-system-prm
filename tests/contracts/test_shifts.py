@@ -308,7 +308,7 @@ def test_librarian_schedule_and_ownership(http_client: httpx.Client, seed_passwo
     lib1_id = me_res.json()["id"]
 
     now = datetime.datetime.now(VN_TZ).replace(microsecond=0)
-    day_offset = 12 + (int(uuid.uuid4().hex[:4], 16) % 10)
+    day_offset = 300 + (int(uuid.uuid4().hex[:4], 16) % 100)
     starts = (now + datetime.timedelta(days=day_offset)).replace(hour=8, minute=0, second=0)
     ends = starts + datetime.timedelta(hours=6)
 
@@ -328,11 +328,12 @@ def test_librarian_schedule_and_ownership(http_client: httpx.Client, seed_passwo
     assert lib_get_res.status_code == 404
 
     # Admin assigns librarian
-    http_client.post(
+    assign_res = http_client.post(
         f"/api/v1/shifts/{shift_id}/assignments",
         headers={"Authorization": f"Bearer {admin_token}"},
         json={"version": 0, "staffIds": [lib1_id]},
     )
+    assert assign_res.status_code == 201, f"Assignment failed: {assign_res.text}"
 
     # Now librarian CAN read shift detail
     lib_get_ok = http_client.get(
@@ -346,6 +347,10 @@ def test_librarian_schedule_and_ownership(http_client: httpx.Client, seed_passwo
     my_shifts_res = http_client.get(
         "/api/v1/me/shifts",
         headers={"Authorization": f"Bearer {lib_token}"},
+        params={
+            "from": (starts - datetime.timedelta(days=1)).isoformat(),
+            "to": (ends + datetime.timedelta(days=1)).isoformat(),
+        },
     )
     assert my_shifts_res.status_code == 200
     my_shifts = my_shifts_res.json()

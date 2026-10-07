@@ -31,6 +31,8 @@ public class DevSeedService {
         seedAccount("AD001", "admin@example.test", "System Administrator", "ADMIN");
         seedAccount("LIB001", "librarian@example.test", "Alex Nguyen", "LIBRARIAN");
         seedAccount("SV001", "student@example.test", "Student Van A", "STUDENT");
+        seedAccount("SV002", "student2@example.test", "Student Thi B", "STUDENT");
+        seedAccount("SV003", "student3@example.test", "Student Van C", "STUDENT");
         ensureDevOpeningHours();
     }
 

@@ -51,19 +51,8 @@ async def extract_embeddings(
         validate_and_decode_image(content, filename=img_file.filename or "image")
         decoded_images.append(content)
 
-    # In mock mode, generate 512-dimensional L2-normalized vectors
-    # Vectors will be identical per-person to simulate consistent embeddings
-    np.random.seed(42)
-    base_vec = np.random.randn(512).astype(np.float32)
-    base_vec /= np.linalg.norm(base_vec)
-
-    embeddings = []
-    for i in range(len(decoded_images)):
-        # Small perturbation to simulate slight pose variance while maintaining high similarity
-        noise = (np.random.randn(512) * 0.02).astype(np.float32)
-        v = base_vec + noise
-        v /= np.linalg.norm(v)
-        embeddings.append(v.tolist())
+    from app.services.embedding_service import extract_face_embeddings
+    embeddings = extract_face_embeddings(decoded_images, simulated=mock_mode)
 
     return InternalEmbeddingResult(
         embeddings=embeddings,
