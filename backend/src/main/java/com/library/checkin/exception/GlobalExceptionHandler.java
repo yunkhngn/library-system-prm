@@ -78,6 +78,49 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(error);
     }
 
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(org.springframework.dao.DataIntegrityViolationException ex, HttpServletRequest request) {
+        String msg = ex.getMessage() != null ? ex.getMessage() : "";
+        Throwable rootCause = ex.getRootCause();
+        if (rootCause != null && rootCause.getMessage() != null) {
+            msg += " " + rootCause.getMessage();
+        }
+        String traceId = getOrCreateTraceId(request);
+
+        if (msg.contains("no_staff_overlap")) {
+            ApiError error = new ApiError(
+                    "SHIFT_OVERLAP",
+                    "Staff member has an overlapping shift assignment",
+                    List.of(),
+                    traceId,
+                    OffsetDateTime.now(),
+                    false
+            );
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        }
+        if (msg.contains("chk_shift_duration") || msg.contains("chk_assignment_duration")) {
+            ApiError error = new ApiError(
+                    "INVALID_TIME_RANGE",
+                    "Invalid shift duration or time range",
+                    List.of(),
+                    traceId,
+                    OffsetDateTime.now(),
+                    false
+            );
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+        }
+
+        ApiError error = new ApiError(
+                "DATA_INTEGRITY_VIOLATION",
+                "Database constraint violation",
+                List.of(),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneralException(Exception ex, HttpServletRequest request) {
         org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unhandled exception processing request " + request.getRequestURI(), ex);
