@@ -1,0 +1,6289 @@
+openapi: 3.0.3
+info:
+  title: Library Backend — MVP API contract
+  version: 1.0.0-design
+  description: 'Implementation contract; these APIs are not yet operational. Scope: STUDENT/LIBRARIAN/ADMIN/KIOSK
+    with shared code/email. Detailed rules: api-mvp-ready-to-code.md. JSON camelCase, ISO8601 timestamps with timezone,
+    page=0/size=20(max100).'
+servers:
+- url: http://localhost:8080
+  description: Dev Docker host; designed endpoints are not yet implemented
+tags:
+- name: Access
+- name: Analytics
+- name: Auth
+- name: Biometrics
+- name: Configuration
+- name: History
+- name: Infrastructure
+- name: Kiosks
+- name: Occupancy
+- name: Profile
+- name: Shifts
+- name: Student
+- name: Users
+- name: Visitors
+components:
+  schemas:
+    AccessAnalytics:
+      type: object
+      additionalProperties: false
+      properties:
+        from:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        to:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        timezone:
+          type: string
+          enum:
+          - Asia/Ho_Chi_Minh
+        bucket:
+          type: string
+          enum:
+          - DAY
+          - HOUR
+        totalCheckIns:
+          type: integer
+          format: int64
+          minimum: 0
+        totalCheckOuts:
+          type: integer
+          format: int64
+          minimum: 0
+        averageStaySeconds:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        buckets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessBucket'
+          minItems: 1
+          maxItems: 10000
+      required:
+      - from
+      - to
+      - timezone
+      - bucket
+      - totalCheckIns
+      - totalCheckOuts
+      - averageStaySeconds
+      - buckets
+    AccessBucket:
+      type: object
+      additionalProperties: false
+      properties:
+        startsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        endsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        checkIns:
+          type: integer
+          format: int64
+          minimum: 0
+        checkOuts:
+          type: integer
+          format: int64
+          minimum: 0
+        faceCheckIns:
+          type: integer
+          format: int64
+          minimum: 0
+        qrCheckIns:
+          type: integer
+          format: int64
+          minimum: 0
+        manualCheckIns:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - startsAt
+      - endsAt
+      - checkIns
+      - checkOuts
+      - faceCheckIns
+      - qrCheckIns
+      - manualCheckIns
+    AccessRequestStatus:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        idempotencyKey:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        status:
+          type: string
+          enum:
+          - IN_PROGRESS
+          - COMPLETED
+        httpStatus:
+          type: integer
+          format: int64
+          minimum: 100
+          maximum: 599
+          nullable: true
+        result:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/AccessResult'
+          nullable: true
+        error:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/ApiError'
+          nullable: true
+        processingDeadline:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - requestId
+      - idempotencyKey
+      - status
+      - httpStatus
+      - result
+      - error
+      - processingDeadline
+      - expiresAt
+    AccessResult:
+      type: object
+      additionalProperties: false
+      properties:
+        requestId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        sessionId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        action:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+        subject:
+          $ref: '#/components/schemas/Subject'
+        method: &id001
+          type: string
+          enum:
+          - FACE
+          - QR
+          - MANUAL
+        occurredAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        occupancy:
+          $ref: '#/components/schemas/Occupancy'
+        simulated:
+          type: boolean
+          enum:
+          - false
+      required:
+      - requestId
+      - sessionId
+      - action
+      - subject
+      - method
+      - occurredAt
+      - occupancy
+      - simulated
+    AccessSession:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        subject:
+          $ref: '#/components/schemas/Subject'
+        checkInTime:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        checkOutTime:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+          nullable: true
+        checkInMethod: *id001
+        checkOutMethod:
+          type: string
+          enum:
+          - FACE
+          - QR
+          - MANUAL
+          nullable: true
+        checkInKiosk:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/KioskSummary'
+          nullable: true
+        checkOutKiosk:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/KioskSummary'
+          nullable: true
+        checkInBy:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/Actor'
+          nullable: true
+        checkOutBy:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/Actor'
+          nullable: true
+        checkoutReason:
+          type: string
+          enum:
+          - USER_ACTION
+          - MANUAL
+          - CLOSING_TIME
+          - MAX_DURATION
+          nullable: true
+        manualReason:
+          type: string
+          nullable: true
+          maxLength: 1000
+        checkOutManualReason:
+          type: string
+          nullable: true
+          maxLength: 1000
+        durationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Until checkout for closed sessions, or snapshot time for open sessions.
+      required:
+      - id
+      - subject
+      - checkInTime
+      - checkOutTime
+      - checkInMethod
+      - checkOutMethod
+      - checkInKiosk
+      - checkOutKiosk
+      - checkInBy
+      - checkOutBy
+      - checkoutReason
+      - manualReason
+      - checkOutManualReason
+      - durationSeconds
+    AccessSessionPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccessSession'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    AccessStatus:
+      type: object
+      additionalProperties: false
+      properties:
+        isInside:
+          type: boolean
+        currentSession:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/AccessSession'
+          nullable: true
+        asOf:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - isInside
+      - currentSession
+      - asOf
+    Actor:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        code: &id002
+          type: string
+          pattern: ^[A-Z0-9][A-Z0-9_-]{2,31}$
+          minLength: 3
+          maxLength: 32
+          example: LIB001
+          description: Trim and uppercase before validation/storage; a shared code for all roles.
+        fullName: &id003
+          type: string
+          minLength: 1
+          maxLength: 150
+          example: Alex Nguyen
+          description: Trim; reject whitespace-only values.
+      required:
+      - id
+      - code
+      - fullName
+    ApiError:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          enum:
+          - ACCOUNT_LOCKED
+          - AI_UNAVAILABLE
+          - ALREADY_INSIDE
+          - ASSIGNMENT_EXISTS
+          - CAPACITY_REACHED
+          - CHALLENGE_ALREADY_USED
+          - CHALLENGE_EXPIRED
+          - CHALLENGE_INVALID
+          - CODE_EXISTS
+          - CONSENT_POLICY_CHANGED
+          - CONSENT_REQUIRED
+          - CURRENT_PASSWORD_INVALID
+          - DB_UNAVAILABLE
+          - EMAIL_EXISTS
+          - ENROLLMENT_CHANGED
+          - FACE_NOT_FOUND
+          - FORBIDDEN
+          - IDEMPOTENCY_CONFLICT
+          - IDEMPOTENCY_KEY_REQUIRED
+          - IMAGE_INVALID
+          - INCONSISTENT_FACES
+          - INTERNAL_ERROR
+          - INVALID_CREDENTIALS
+          - INVALID_JSON
+          - INVALID_QUERY
+          - INVALID_REFRESH_TOKEN
+          - INVALID_REQUEST
+          - INVALID_TIME_RANGE
+          - INVALID_TOKEN_PURPOSE
+          - KIOSK_REACTIVATION_REQUIRES_ROTATION
+          - KIOSK_REVOKED
+          - LAST_ADMIN_PROTECTED
+          - LIBRARY_CLOSED
+          - LIVENESS_FAILED
+          - LOW_QUALITY
+          - MODEL_NOT_CALIBRATED
+          - MODEL_NOT_READY
+          - MODEL_VERSION_MISMATCH
+          - MULTIPLE_FACES
+          - NOT_INSIDE
+          - NO_MATCH
+          - PASSWORD_CHANGE_REQUIRED
+          - PASSWORD_UNCHANGED
+          - PAYLOAD_TOO_LARGE
+          - QR_ALREADY_USED
+          - QR_EXPIRED
+          - QR_INVALID
+          - RATE_LIMITED
+          - REQUEST_ABORTED
+          - REQUEST_IN_PROGRESS
+          - RESOURCE_NOT_FOUND
+          - SCAN_TOO_SOON
+          - SHIFT_CANCELLED
+          - SHIFT_OVERLAP
+          - SIMULATED_RESULT_REJECTED
+          - STAFF_NOT_ELIGIBLE
+          - SUBJECT_NOT_ELIGIBLE
+          - TOKEN_EXPIRED
+          - TOKEN_REVOKED
+          - UNAUTHENTICATED
+          - UNKNOWN_FIELD
+          - USER_HAS_OPEN_SESSION
+          - VALIDATION_ERROR
+          - VERSION_CONFLICT
+          - VIDEO_INVALID
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+        traceId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        fallbackRecommended:
+          type: boolean
+          default: false
+      required:
+      - code
+      - message
+      - fieldErrors
+      - traceId
+      - timestamp
+      - fallbackRecommended
+    AssignStaffRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        staffIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+            example: 14867700-9090-4000-8000-000000000001
+          minItems: 1
+          maxItems: 100
+          uniqueItems: true
+      required:
+      - version
+      - staffIds
+    Assignment:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        shiftId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        staff:
+          $ref: '#/components/schemas/Actor'
+        startsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        endsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        assignedBy:
+          $ref: '#/components/schemas/Actor'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - id
+      - shiftId
+      - staff
+      - startsAt
+      - endsAt
+      - status
+      - version
+      - assignedBy
+      - createdAt
+      - updatedAt
+    AssignmentBatch:
+      type: object
+      additionalProperties: false
+      properties:
+        shift:
+          $ref: '#/components/schemas/Shift'
+        assignments:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+      required:
+      - shift
+      - assignments
+    AssignmentPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    BackendHealth:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum:
+          - UP
+          - DOWN
+      required:
+      - status
+    CancelShiftRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - version
+      - reason
+    ChallengeInstruction:
+      type: object
+      additionalProperties: false
+      properties:
+        action:
+          type: string
+          enum:
+          - BLINK
+          - TURN_LEFT
+          - TURN_RIGHT
+        order:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 2
+      required:
+      - action
+      - order
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        currentPassword:
+          type: string
+          minLength: 1
+          maxLength: 64
+          format: password
+          writeOnly: true
+        newPassword: &id004
+          type: string
+          minLength: 12
+          maxLength: 64
+          format: password
+          writeOnly: true
+          description: 12–64 characters, with total UTF-8 length no greater than 72 bytes (BCrypt). Do not trim
+            passwords.
+          example: DevOnly!2026Change
+      required:
+      - currentPassword
+      - newPassword
+    ConfigChangedEvent:
+      type: object
+      additionalProperties: false
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        occurredAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+        count:
+          type: integer
+          format: int64
+          minimum: 0
+        maxCapacity:
+          type: integer
+          format: int64
+          minimum: 1
+        nearCapacity:
+          type: boolean
+        change:
+          type: object
+          additionalProperties: false
+          properties:
+            action:
+              type: string
+              enum:
+              - CONFIG_CHANGED
+          required:
+          - action
+      required:
+      - eventId
+      - occurredAt
+      - revision
+      - count
+      - maxCapacity
+      - nearCapacity
+      - change
+    ConsentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        policyVersion:
+          type: string
+          minLength: 1
+          maxLength: 32
+        accepted:
+          type: boolean
+          enum:
+          - true
+      required:
+      - policyVersion
+      - accepted
+    CreateKioskRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code: *id002
+        name: *id003
+        mode:
+          type: string
+          enum:
+          - ENTRY
+          - EXIT
+          - AUTO
+      required:
+      - code
+      - name
+      - mode
+    CreateShiftRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        name: *id003
+        startsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        endsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - name
+      - startsAt
+      - endsAt
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        code: *id002
+        email: &id005
+          type: string
+          format: email
+          maxLength: 254
+          example: librarian@example.test
+          description: Trim and lowercase the entire value before storage.
+        fullName: *id003
+        role: &id006
+          type: string
+          enum:
+          - STUDENT
+          - LIBRARIAN
+          - ADMIN
+        password: *id004
+        mustChangePassword:
+          type: boolean
+          default: true
+      required:
+      - code
+      - email
+      - fullName
+      - role
+      - password
+    CreateVisitorRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        fullName: *id003
+      required:
+      - fullName
+    EnrollmentUpload:
+      type: object
+      additionalProperties: false
+      properties:
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          minItems: 3
+          maxItems: 5
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - images
+      - version
+    FaceAccessUpload:
+      type: object
+      additionalProperties: false
+      properties:
+        clip:
+          type: string
+          format: binary
+        challengeId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      required:
+      - clip
+      - challengeId
+    FaceCaptureRules:
+      type: object
+      additionalProperties: false
+      properties:
+        imageMimeTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - image/jpeg
+            - image/png
+        minImages:
+          type: integer
+          format: int64
+          enum:
+          - 3
+        maxImages:
+          type: integer
+          format: int64
+          enum:
+          - 5
+        maxImageBytes:
+          type: integer
+          format: int64
+          enum:
+          - 5242880
+        maxTotalImageBytes:
+          type: integer
+          format: int64
+          enum:
+          - 26214400
+        maxImagePixels:
+          type: integer
+          format: int64
+          enum:
+          - 16000000
+        clipMimeTypes:
+          type: array
+          items:
+            type: string
+            enum:
+            - video/mp4
+        maxClipBytes:
+          type: integer
+          format: int64
+          enum:
+          - 10485760
+        minClipDurationSeconds:
+          type: number
+          format: double
+          enum:
+          - 1
+        maxClipDurationSeconds:
+          type: number
+          format: double
+          enum:
+          - 3
+        maxClipFps:
+          type: integer
+          format: int64
+          enum:
+          - 30
+        maxClipWidth:
+          type: integer
+          format: int64
+          enum:
+          - 1280
+        maxClipHeight:
+          type: integer
+          format: int64
+          enum:
+          - 720
+      required:
+      - imageMimeTypes
+      - minImages
+      - maxImages
+      - maxImageBytes
+      - maxTotalImageBytes
+      - maxImagePixels
+      - clipMimeTypes
+      - maxClipBytes
+      - minClipDurationSeconds
+      - maxClipDurationSeconds
+      - maxClipFps
+      - maxClipWidth
+      - maxClipHeight
+    FaceChallenge:
+      type: object
+      additionalProperties: false
+      properties:
+        challengeId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        instructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeInstruction'
+          minItems: 2
+          maxItems: 2
+        captureRules:
+          $ref: '#/components/schemas/FaceCaptureRules'
+      required:
+      - challengeId
+      - expiresAt
+      - instructions
+      - captureRules
+    FaceConsent:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        policyVersion:
+          type: string
+        grantedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        revokedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+          nullable: true
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - id
+      - policyVersion
+      - grantedAt
+      - revokedAt
+      - version
+    FaceDeletion:
+      type: object
+      additionalProperties: false
+      properties:
+        isEnrolled:
+          type: boolean
+          enum:
+          - false
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        deletedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - isEnrolled
+      - version
+      - deletedAt
+    FaceEnrollment:
+      type: object
+      additionalProperties: false
+      properties:
+        isEnrolled:
+          type: boolean
+        consent:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/FaceConsent'
+          nullable: true
+        imageCount:
+          type: integer
+          format: int64
+          minimum: 0
+          maximum: 5
+        modelId:
+          type: string
+          nullable: true
+        modelVersion:
+          type: string
+          nullable: true
+        enrolledAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+          nullable: true
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - isEnrolled
+      - consent
+      - imageCount
+      - modelId
+      - modelVersion
+      - enrolledAt
+      - version
+    FacePolicy:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: string
+          example: '1.0'
+        title:
+          type: string
+        content:
+          type: string
+        captureRules:
+          $ref: '#/components/schemas/FaceCaptureRules'
+      required:
+      - version
+      - title
+      - content
+      - captureRules
+    FieldError:
+      type: object
+      additionalProperties: false
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+      required:
+      - field
+      - message
+    HeartbeatRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        appVersion:
+          type: string
+          minLength: 1
+          maxLength: 32
+        cameraStatus:
+          type: string
+          enum:
+          - OK
+          - ERROR
+          - UNAVAILABLE
+      required:
+      - appVersion
+      - cameraStatus
+    HeartbeatResult:
+      type: object
+      additionalProperties: false
+      properties:
+        serverTime:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        heartbeatIntervalSeconds:
+          type: integer
+          format: int64
+          example: 30
+        kiosk:
+          $ref: '#/components/schemas/Kiosk'
+      required:
+      - serverTime
+      - heartbeatIntervalSeconds
+      - kiosk
+    Kiosk:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        code: *id002
+        name: *id003
+        mode:
+          type: string
+          enum:
+          - ENTRY
+          - EXIT
+          - AUTO
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - REVOKED
+        isOnline:
+          type: boolean
+        lastSeenAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+          nullable: true
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - id
+      - code
+      - name
+      - mode
+      - status
+      - isOnline
+      - lastSeenAt
+      - version
+      - createdAt
+      - updatedAt
+    KioskCredential:
+      type: object
+      additionalProperties: false
+      properties:
+        kiosk:
+          $ref: '#/components/schemas/Kiosk'
+        credential:
+          type: string
+          description: Secret returned once; the server stores only its hash. Never log it.
+      required:
+      - kiosk
+      - credential
+    KioskLoginRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        kioskId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        credential:
+          type: string
+          minLength: 32
+          maxLength: 256
+          writeOnly: true
+      required:
+      - kioskId
+      - credential
+    KioskPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Kiosk'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    KioskRuntimeConfig:
+      type: object
+      additionalProperties: false
+      properties:
+        kioskId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        mode:
+          type: string
+          enum:
+          - ENTRY
+          - EXIT
+          - AUTO
+        timezone:
+          type: string
+          enum:
+          - Asia/Ho_Chi_Minh
+        openingHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningSlot'
+        qrTtlSeconds:
+          type: integer
+          format: int64
+          enum:
+          - 30
+        scanCooldownSeconds:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 60
+        faceEnabled:
+          type: boolean
+        faceCapture:
+          $ref: '#/components/schemas/FaceCaptureRules'
+        serverTime:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        configVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - kioskId
+      - mode
+      - timezone
+      - openingHours
+      - qrTtlSeconds
+      - scanCooldownSeconds
+      - faceEnabled
+      - faceCapture
+      - serverTime
+      - configVersion
+    KioskSummary:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        code: *id002
+        name: *id003
+      required:
+      - id
+      - code
+      - name
+    KioskToken:
+      type: object
+      additionalProperties: false
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+          - Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          example: 3600
+        kiosk:
+          $ref: '#/components/schemas/Kiosk'
+      required:
+      - accessToken
+      - tokenType
+      - expiresIn
+      - kiosk
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        identifier:
+          type: string
+          minLength: 1
+          maxLength: 254
+          example: LIB001
+          description: Code or email, trimmed; code uppercase/email lowercase.
+        password:
+          type: string
+          minLength: 1
+          maxLength: 64
+          format: password
+          writeOnly: true
+      required:
+      - identifier
+      - password
+    ManualAccessRequest:
+      oneOf:
+      - $ref: '#/components/schemas/ManualUserAccessRequest'
+      - $ref: '#/components/schemas/ManualVisitorAccessRequest'
+    ManualUserAccessRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        userId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        action:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - userId
+      - action
+      - reason
+    ManualVisitorAccessRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        visitorId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        action:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+      required:
+      - visitorId
+      - action
+      - reason
+    MyShift:
+      type: object
+      additionalProperties: false
+      properties:
+        shift:
+          $ref: '#/components/schemas/Shift'
+        assignment:
+          $ref: '#/components/schemas/Assignment'
+      required:
+      - shift
+      - assignment
+    MyShiftPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MyShift'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    Occupancy:
+      type: object
+      additionalProperties: false
+      properties:
+        count:
+          type: integer
+          format: int64
+          minimum: 0
+        maxCapacity:
+          type: integer
+          format: int64
+          minimum: 1
+        nearCapacity:
+          type: boolean
+        capacityEnforcement:
+          type: boolean
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+        asOf:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - count
+      - maxCapacity
+      - nearCapacity
+      - capacityEnforcement
+      - revision
+      - asOf
+    OccupancyChange:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        action:
+          type: string
+          enum:
+          - CHECK_IN
+          - CHECK_OUT
+          - AUTO_CHECK_OUT
+      required:
+      - sessionId
+      - action
+    OccupancyEvent:
+      type: object
+      additionalProperties: false
+      properties:
+        eventId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        occurredAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        revision:
+          type: integer
+          format: int64
+          minimum: 0
+        count:
+          type: integer
+          format: int64
+          minimum: 0
+        maxCapacity:
+          type: integer
+          format: int64
+          minimum: 1
+        nearCapacity:
+          type: boolean
+        change:
+          $ref: '#/components/schemas/OccupancyChange'
+      required:
+      - eventId
+      - occurredAt
+      - revision
+      - count
+      - maxCapacity
+      - nearCapacity
+      - change
+    Occupant:
+      type: object
+      additionalProperties: false
+      properties:
+        sessionId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        subject:
+          $ref: '#/components/schemas/Subject'
+        checkInTime:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        durationSeconds:
+          type: integer
+          format: int64
+          minimum: 0
+        checkInMethod: *id001
+      required:
+      - sessionId
+      - subject
+      - checkInTime
+      - durationSeconds
+      - checkInMethod
+    OccupantPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Occupant'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    OpeningSlot:
+      type: object
+      additionalProperties: false
+      properties:
+        dayOfWeek:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 7
+          description: 'ISO weekday: Monday=1'
+        opensAt:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: 08:00
+        closesAt:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: '22:00'
+      required:
+      - dayOfWeek
+      - opensAt
+      - closesAt
+    OutcomeCount:
+      type: object
+      additionalProperties: false
+      properties:
+        outcome:
+          type: string
+        count:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - outcome
+      - count
+    PatchAssignmentRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        staffId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      required:
+      - version
+      - staffId
+    PatchKioskRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        name: *id003
+        mode:
+          type: string
+          enum:
+          - ENTRY
+          - EXIT
+          - AUTO
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - REVOKED
+      required:
+      - version
+      minProperties: 2
+    PatchShiftRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        name: *id003
+        startsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        endsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - version
+      minProperties: 2
+    PatchSystemConfigRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        timezone: &id007
+          type: string
+          enum:
+          - Asia/Ho_Chi_Minh
+        openingHours: &id008
+          type: array
+          items:
+            $ref: '#/components/schemas/OpeningSlot'
+          maxItems: 7
+          description: At most one slot per day; days without slots are closed. opensAt=closesAt is invalid. closesAt<opensAt
+            means overnight.
+        maxCapacity: &id009
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100000
+          default: 250
+        nearCapacityRatio: &id010
+          type: number
+          format: double
+          minimum: 0.1
+          maximum: 1
+          default: 0.9
+        capacityEnforcement: &id011
+          type: boolean
+          default: false
+        maxSessionDurationMinutes: &id012
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 10080
+          nullable: true
+          default: null
+        scanCooldownSeconds: &id013
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 60
+          default: 10
+        faceModelVersion: &id014
+          type: string
+          minLength: 1
+          maxLength: 128
+          nullable: true
+        faceMaxCosineDistance: &id015
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+          nullable: true
+        faceMinDistanceGap: &id016
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+          nullable: true
+        livenessMinScore: &id017
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          nullable: true
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - version
+      minProperties: 2
+    PatchUserRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        code: *id002
+        email: *id005
+        fullName: *id003
+        role: *id006
+        status: &id018
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+      required:
+      - version
+      minProperties: 2
+      description: At least one field besides version; reject null/unknown fields.
+    QrAccessRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+          minLength: 20
+          maxLength: 4096
+          writeOnly: true
+      required:
+      - token
+    QrToken:
+      type: object
+      additionalProperties: false
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        refreshAfterSeconds:
+          type: integer
+          format: int64
+          example: 25
+      required:
+      - token
+      - expiresAt
+      - refreshAfterSeconds
+    RealtimeEvent:
+      oneOf:
+      - $ref: '#/components/schemas/OccupancyEvent'
+      - $ref: '#/components/schemas/ConfigChangedEvent'
+    RecognitionAnalytics:
+      type: object
+      additionalProperties: false
+      properties:
+        from:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        to:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        totalAttempts:
+          type: integer
+          format: int64
+          minimum: 0
+        matched:
+          type: integer
+          format: int64
+          minimum: 0
+        failed:
+          type: integer
+          format: int64
+          minimum: 0
+        failureRate:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+          nullable: true
+        p50LatencyMs:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        p95LatencyMs:
+          type: number
+          format: double
+          minimum: 0
+          nullable: true
+        outcomes:
+          type: array
+          items:
+            $ref: '#/components/schemas/OutcomeCount'
+      required:
+      - from
+      - to
+      - totalAttempts
+      - matched
+      - failed
+      - failureRate
+      - p50LatencyMs
+      - p95LatencyMs
+      - outcomes
+    RefreshRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        refreshToken:
+          type: string
+          minLength: 20
+          maxLength: 4096
+          writeOnly: true
+      required:
+      - refreshToken
+    ResetPasswordRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        newPassword: *id004
+      required:
+      - version
+      - newPassword
+    Shift:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        name: *id003
+        startsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        endsAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        assignmentCount:
+          type: integer
+          format: int64
+          minimum: 0
+        createdBy:
+          $ref: '#/components/schemas/Actor'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        cancellationReason:
+          type: string
+          nullable: true
+          maxLength: 1000
+      required:
+      - id
+      - name
+      - startsAt
+      - endsAt
+      - status
+      - version
+      - assignmentCount
+      - createdBy
+      - createdAt
+      - updatedAt
+      - cancellationReason
+    ShiftPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Shift'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    Subject:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        kind:
+          type: string
+          enum:
+          - USER
+          - VISITOR
+        code:
+          type: string
+          maxLength: 40
+        fullName: *id003
+      required:
+      - id
+      - kind
+      - code
+      - fullName
+    SystemConfig:
+      type: object
+      additionalProperties: false
+      properties:
+        timezone: *id007
+        openingHours: *id008
+        maxCapacity: *id009
+        nearCapacityRatio: *id010
+        capacityEnforcement: *id011
+        maxSessionDurationMinutes: *id012
+        scanCooldownSeconds: *id013
+        faceModelVersion: *id014
+        faceMaxCosineDistance: *id015
+        faceMinDistanceGap: *id016
+        livenessMinScore: *id017
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        updatedBy:
+          type: object
+          allOf:
+          - $ref: '#/components/schemas/Actor'
+          nullable: true
+      required:
+      - timezone
+      - openingHours
+      - maxCapacity
+      - nearCapacityRatio
+      - capacityEnforcement
+      - maxSessionDurationMinutes
+      - scanCooldownSeconds
+      - faceModelVersion
+      - faceMaxCosineDistance
+      - faceMinDistanceGap
+      - livenessMinScore
+      - version
+      - updatedAt
+      - updatedBy
+    TokenPair:
+      type: object
+      additionalProperties: false
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        tokenType:
+          type: string
+          enum:
+          - Bearer
+        expiresIn:
+          type: integer
+          format: int64
+          example: 900
+        user:
+          $ref: '#/components/schemas/User'
+      required:
+      - accessToken
+      - refreshToken
+      - tokenType
+      - expiresIn
+      - user
+    User:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        code: *id002
+        email: *id005
+        fullName: *id003
+        role: *id006
+        status: *id018
+        mustChangePassword:
+          type: boolean
+        faceEnrolled:
+          type: boolean
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        updatedAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - id
+      - code
+      - email
+      - fullName
+      - role
+      - status
+      - mustChangePassword
+      - faceEnrolled
+      - version
+      - createdAt
+      - updatedAt
+    UserPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+    VersionRequest:
+      type: object
+      additionalProperties: false
+      properties:
+        version:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      required:
+      - version
+    Visitor:
+      type: object
+      additionalProperties: false
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        referenceCode:
+          type: string
+          example: GUEST-000001
+        fullName: *id003
+        createdBy:
+          $ref: '#/components/schemas/Actor'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      required:
+      - id
+      - referenceCode
+      - fullName
+      - createdBy
+      - createdAt
+    VisitorPage:
+      type: object
+      additionalProperties: false
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Visitor'
+        page:
+          type: integer
+          format: int64
+          minimum: 0
+        size:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+        totalElements:
+          type: integer
+          format: int64
+          minimum: 0
+        totalPages:
+          type: integer
+          format: int64
+          minimum: 0
+      required:
+      - items
+      - page
+      - size
+      - totalElements
+      - totalPages
+  responses:
+    Error400:
+      description: INVALID_REQUEST; INVALID_JSON; INVALID_QUERY; UNKNOWN_FIELD; IDEMPOTENCY_KEY_REQUIRED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: IDEMPOTENCY_KEY_REQUIRED
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error401:
+      description: UNAUTHENTICATED; TOKEN_EXPIRED; TOKEN_REVOKED; INVALID_CREDENTIALS; INVALID_REFRESH_TOKEN; INVALID_SERVICE_KEY
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: INVALID_CREDENTIALS
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error403:
+      description: FORBIDDEN; ACCOUNT_LOCKED; KIOSK_REVOKED; PASSWORD_CHANGE_REQUIRED; INVALID_TOKEN_PURPOSE
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: ACCOUNT_LOCKED
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error404:
+      description: RESOURCE_NOT_FOUND
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: RESOURCE_NOT_FOUND
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error409:
+      description: VERSION_CONFLICT; CODE_EXISTS; EMAIL_EXISTS; LAST_ADMIN_PROTECTED; USER_HAS_OPEN_SESSION; KIOSK_REACTIVATION_REQUIRES_ROTATION;
+        ALREADY_INSIDE; NOT_INSIDE; SCAN_TOO_SOON; QR_ALREADY_USED; IDEMPOTENCY_CONFLICT; REQUEST_IN_PROGRESS; SHIFT_OVERLAP;
+        SHIFT_CANCELLED; ASSIGNMENT_EXISTS; CHALLENGE_ALREADY_USED; CONSENT_REQUIRED; CONSENT_POLICY_CHANGED; ENROLLMENT_CHANGED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: ALREADY_INSIDE
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+      headers:
+        Retry-After:
+          description: 'REQUEST_IN_PROGRESS: 1 second; other conflicts omit this header.'
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+    Error413:
+      description: PAYLOAD_TOO_LARGE
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: PAYLOAD_TOO_LARGE
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error422:
+      description: VALIDATION_ERROR; INVALID_TIME_RANGE; STAFF_NOT_ELIGIBLE; LIBRARY_CLOSED; CAPACITY_REACHED; QR_INVALID;
+        QR_EXPIRED; FACE_NOT_FOUND; MULTIPLE_FACES; LOW_QUALITY; LIVENESS_FAILED; NO_MATCH; CHALLENGE_EXPIRED; CHALLENGE_INVALID;
+        IMAGE_INVALID; VIDEO_INVALID; MODEL_VERSION_MISMATCH
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: CAPACITY_REACHED
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error429:
+      description: RATE_LIMITED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: RATE_LIMITED
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+      headers:
+        Retry-After:
+          description: Recommended waiting time in seconds, when the server can estimate it.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+    Error500:
+      description: INTERNAL_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: INTERNAL_ERROR
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error503:
+      description: AI_UNAVAILABLE; MODEL_NOT_READY; MODEL_NOT_CALIBRATED; DB_UNAVAILABLE; SIMULATED_RESULT_REJECTED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: AI_UNAVAILABLE
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+      headers:
+        Retry-After:
+          description: Recommended waiting time in seconds, when the server can estimate it.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: User JWT purpose ACCESS; roles are checked by the backend.
+    kioskAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT purpose KIOSK; cannot be replaced by a user token.
+paths:
+  /api/v1/auth/login:
+    post:
+      operationId: login
+      tags:
+      - Auth
+      summary: login
+      description: 'Log in with code or email. Access: 15 minutes; refresh: 7 days. Return mustChangePassword; tokens
+        are restricted until the password changes. Invalid identifier/password returns the same error to avoid exposing
+        account existence.'
+      security: &id019 []
+      x-roles: &id020
+      - PUBLIC
+      x-task: 3
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_CREDENTIALS
+        '403':
+        - ACCOUNT_LOCKED
+        '422':
+        - VALIDATION_ERROR
+        '429': &id021
+        - RATE_LIMITED
+        '500': &id022
+        - INTERNAL_ERROR
+      x-acceptance-tests:
+      - Code/email both support login after normalization.
+      - An incorrect password does not reveal whether the account exists.
+      - LOCKED accounts receive no tokens.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            example:
+              identifier: LIB001
+              password: x
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshTokens
+      tags:
+      - Auth
+      summary: refreshTokens
+      description: 'Single-use rotation: revoke the old token and issue a new pair within one transaction. Reusing
+        a rotated token revokes the entire family. Do not automatically retry after a lost response; log in again.
+        Business APIs are unavailable while mustChangePassword=true.'
+      security: *id019
+      x-roles: *id020
+      x-task: 3
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_REFRESH_TOKEN
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - ACCOUNT_LOCKED
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - 'Two concurrent refreshes: only one succeeds.'
+      - Reuse revokes the family.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: example-token-not-a-real-credential
+  /api/v1/auth/logout:
+    post:
+      operationId: logout
+      tags:
+      - Auth
+      summary: logout
+      description: Revoke the family of the current user's refreshToken. Already-revoked tokens return 204. Another
+        user's refresh token returns 404. Access tokens whose sid belongs to this family become invalid immediately.
+        Allowed for tokens restricted by PASSWORD_CHANGE_REQUIRED.
+      security: &id023
+      - bearerAuth: []
+      x-roles: &id024
+      - STUDENT
+      - LIBRARIAN
+      - ADMIN
+      x-task: 3
+      x-retry-policy: IDEMPOTENT
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404':
+        - RESOURCE_NOT_FOUND
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Repeated logout returns 204.
+      - An access token with a logged-out sid returns 401.
+      responses:
+        '204':
+          description: Success, no response body
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshRequest'
+            example:
+              refreshToken: example-token-not-a-real-credential
+  /api/v1/me:
+    get:
+      operationId: getMyProfile
+      tags:
+      - Profile
+      summary: getMyProfile
+      description: Profile of the current JWT; no userId input. Allowed when mustChangePassword=true.
+      security: *id023
+      x-roles: *id024
+      x-task: 3
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Omit password_hash/authVersion.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/me/password:
+    put:
+      operationId: changeMyPassword
+      tags:
+      - Profile
+      summary: changeMyPassword
+      description: Check currentPassword. The new password must differ, contain 12–64 characters, and use ≤72 UTF-8
+        bytes. Update the hash, increment auth_version, revoke all old families, clear mustChangePassword, then
+        issue a new family/token pair. If the response is lost, log in with the new password; do not automatically
+        retry.
+      security: *id023
+      x-roles: *id024
+      x-task: 3
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - VALIDATION_ERROR
+        - CURRENT_PASSWORD_INVALID
+        - PASSWORD_UNCHANGED
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Old passwords/refresh tokens/access tokens all become invalid.
+      - Forced-change accounts must change the password via me/password before other business APIs become available.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangePasswordRequest'
+            example:
+              currentPassword: x
+              newPassword: DevOnly!2026Change
+  /api/v1/users:
+    get:
+      operationId: listUsers
+      tags:
+      - Users
+      summary: listUsers
+      description: 'Search code, fullName, and email; default to all roles/statuses. q uses case-insensitive contains.
+        Defaults: page=0,size=20.'
+      security: &id025
+      - bearerAuth: []
+      x-roles: &id026
+      - ADMIN
+      x-task: 3
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Student/Librarian receive 403.
+      - Email is only exposed in account data authorized for Admin.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserPage'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: role
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - STUDENT
+          - LIBRARIAN
+          - ADMIN
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - createdAt,desc
+          - code,asc
+          - fullName,asc
+          default: createdAt,desc
+    post:
+      operationId: createUser
+      tags:
+      - Users
+      summary: createUser
+      description: Code/email are UNIQUE after normalization; default status ACTIVE; mustChangePassword=true when
+        omitted. Role is not inferred from code. Do not automatically retry; for CODE_EXISTS/EMAIL_EXISTS, compare
+        the resource via list. Responses omit passwords.
+      security: *id025
+      x-roles: *id026
+      x-task: 3
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - CODE_EXISTS
+        - EMAIL_EXISTS
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - SV001 and sv001 are treated as duplicates.
+      - Email normalization cannot create duplicates.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+            example:
+              code: LIB001
+              email: librarian@example.test
+              fullName: Alex Nguyen
+              role: STUDENT
+              password: DevOnly!2026Change
+  /api/v1/users/{userId}:
+    get:
+      operationId: getUser
+      tags:
+      - Users
+      summary: getUser
+      description: Account details; Admin can also retrieve locked accounts.
+      security: *id025
+      x-roles: *id026
+      x-task: 3
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': &id027
+        - RESOURCE_NOT_FOUND
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - A nonexistent ID returns 404.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+    patch:
+      operationId: updateUser
+      tags:
+      - Users
+      summary: updateUser
+      description: Versioned partial update; reject null/unknown fields. Role/status changes increment auth_version
+        and revoke tokens. Do not lock/demote the last ACTIVE Admin. Do not change a STUDENT with an open session
+        to another role. Locking a person inside the library preserves the session for librarian handling; no automatic
+        checkout.
+      security: *id025
+      x-roles: *id026
+      x-task: 3
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        - CODE_EXISTS
+        - EMAIL_EXISTS
+        - LAST_ADMIN_PROTECTED
+        - USER_HAS_OPEN_SESSION
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - 'Two Admins locking an account concurrently: stale version returns 409.'
+      - Preserve the last active Admin.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchUserRequest'
+            example:
+              version: 0
+              fullName: Alex Nguyen
+  /api/v1/users/{userId}/password:
+    put:
+      operationId: resetUserPassword
+      tags:
+      - Users
+      summary: resetUserPassword
+      description: Admin sets a new password; mustChangePassword=true; increment auth_version and revoke all tokens.
+        Do not return the password or send email. LOCKED users can be reset without being unlocked automatically.
+      security: *id025
+      x-roles: *id026
+      x-task: 3
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Old JWT/refresh tokens become invalid; the user must change their password on the next login.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: userId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+            example:
+              version: 0
+              newPassword: DevOnly!2026Change
+  /api/v1/me/access-status:
+    get:
+      operationId: getMyAccessStatus
+      tags:
+      - Student
+      summary: getMyAccessStatus
+      description: The student's current state and open session. currentSession=null when outside the library.
+      security: &id028
+      - bearerAuth: []
+      x-roles: &id029
+      - STUDENT
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Check-in/out updates isInside correctly; never two currentSession values.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessStatus'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/me/qr:
+    post:
+      operationId: issueMyQr
+      tags:
+      - Student
+      summary: issueMyQr
+      description: Issue a QR token valid for 30 seconds with purpose QR_ACCESS. Every call creates a new nonce;
+        other unexpired QR tokens remain valid, while cooldown/session locks prevent duplicate scans. refreshAfterSeconds=25.
+        Do not automatically retry; request a new code if needed.
+      security: *id028
+      x-roles: *id029
+      x-task: 4
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - An access JWT used as a QR token is rejected.
+      - QR contains no email/images.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QrToken'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/me/access-history:
+    get:
+      operationId: listMyAccessHistory
+      tags:
+      - Student
+      summary: listMyAccessHistory
+      description: 'Only sessions belonging to the JWT student, filtered by checkInTime. If from/to are omitted:
+        [now−30 days,now); if one boundary is provided, default the other. Maximum range: 366 days.'
+      security: *id028
+      x-roles: *id029
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - A userId query cannot expose another user's data.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessSessionPage'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: from
+        in: query
+        required: false
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: false
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - checkInTime,desc
+          - checkInTime,asc
+          default: checkInTime,desc
+  /api/v1/me/access-history/{sessionId}:
+    get:
+      operationId: getMyAccessSession
+      tags:
+      - Student
+      summary: getMyAccessSession
+      description: Sessions owned by another user also return 404.
+      security: *id028
+      x-roles: *id029
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Another user's ID does not disclose existence.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessSession'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/kiosks:
+    get:
+      operationId: listKiosks
+      tags:
+      - Kiosks
+      summary: listKiosks
+      description: Online iff ACTIVE and lastSeenAt is within 90 seconds. Omit credentials/hashes/tokens.
+      security: *id025
+      x-roles: *id026
+      x-task: 4
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Offline status is derived from the heartbeat timeout.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskPage'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - REVOKED
+      - name: isOnline
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: boolean
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - createdAt,desc
+          - code,asc
+          default: createdAt,desc
+    post:
+      operationId: createKiosk
+      tags:
+      - Kiosks
+      summary: createKiosk
+      description: Create ACTIVE with a random credential of ≥32 bytes returned once; the DB stores only its hash.
+        Do not automatically retry; if the response is lost, find by code and rotate-credential.
+      security: *id025
+      x-roles: *id026
+      x-task: 4
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - CODE_EXISTS
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - GET never returns credentials.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskCredential'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateKioskRequest'
+            example:
+              code: LIB001
+              name: Alex Nguyen
+              mode: ENTRY
+  /api/v1/kiosks/{kioskId}:
+    get:
+      operationId: getKiosk
+      tags:
+      - Kiosks
+      summary: getKiosk
+      description: Device details, mode, and online status; omit credentials.
+      security: *id025
+      x-roles: *id026
+      x-task: 4
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - A kiosk token cannot read another device.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kiosk'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: kioskId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+    patch:
+      operationId: updateKiosk
+      tags:
+      - Kiosks
+      summary: updateKiosk
+      description: Update name/mode/status; code is immutable. REVOKED clears the credential hash, increments credential_version,
+        and immediately invalidates kiosk tokens. PATCH cannot transition REVOKED→ACTIVE; use rotate-credential
+        to issue a new secret and activate. Mode changes do not alter open sessions.
+      security: *id025
+      x-roles: *id026
+      x-task: 4
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        - KIOSK_REACTIVATION_REQUIRES_ROTATION
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Old tokens become invalid immediately after revocation.
+      - Activation never restores old credentials.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kiosk'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: kioskId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchKioskRequest'
+            example:
+              version: 0
+              name: Alex Nguyen
+  /api/v1/kiosks/{kioskId}/rotate-credential:
+    post:
+      operationId: rotateKioskCredential
+      tags:
+      - Kiosks
+      summary: rotateKioskCredential
+      description: Increment credential_version, invalidate old tokens, issue a new credential once, and set ACTIVE.
+        After a lost response, GET the version and rotate again; do not replay secrets from the idempotency store.
+      security: *id025
+      x-roles: *id026
+      x-task: 4
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - New secrets work; old secrets/tokens are blocked.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskCredential'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: kioskId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionRequest'
+            example:
+              version: 0
+  /api/v1/kiosks/token:
+    post:
+      operationId: loginKiosk
+      tags:
+      - Kiosks
+      summary: loginKiosk
+      description: Token purpose KIOSK, valid for 1 hour; JWT claims include kioskId and credentialVersion. Check
+        DB status/epoch on every operation. Store the device secret in kiosk secure storage.
+      security: *id019
+      x-roles: *id020
+      x-task: 4
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_CREDENTIALS
+        '403':
+        - KIOSK_REVOKED
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - User JWTs cannot replace kiosk tokens.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskToken'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KioskLoginRequest'
+            example:
+              kioskId: 14867700-9090-4000-8000-000000000001
+              credential: example-device-secret-not-a-real-credential
+  /api/v1/kiosks/heartbeat:
+    post:
+      operationId: heartbeatKiosk
+      tags:
+      - Kiosks
+      summary: heartbeatKiosk
+      description: Update lastSeenAt using server time; camera/appVersion are telemetry, not identity. Send every
+        30 seconds; offline after 90 seconds.
+      security: &id030
+      - kioskAuth: []
+      x-roles: &id031
+      - KIOSK
+      x-task: 4
+      x-retry-policy: IDEMPOTENT
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - KIOSK_REVOKED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - KioskId always comes from the principal.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HeartbeatResult'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HeartbeatRequest'
+            example:
+              appVersion: x
+              cameraStatus: OK
+  /api/v1/kiosks/me/config:
+    get:
+      operationId: getKioskRuntimeConfig
+      tags:
+      - Kiosks
+      summary: getKioskRuntimeConfig
+      description: Configuration for kiosk capture/QR and display; omit credentials, email, and internal thresholds.
+        faceEnabled=false when model/calibration/liveness is not ready.
+      security: *id030
+      x-roles: *id031
+      x-task: 4
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - KIOSK_REVOKED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Configuration changes take effect without rebuilding the App.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KioskRuntimeConfig'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/access/qr:
+    post:
+      operationId: recordQrAccess
+      tags:
+      - Access
+      summary: recordQrAccess
+      description: 'AUTO toggles based on the session; ENTRY only checks in, EXIT only checks out. Consume QR, write
+        logs, update occupancy revision, and store the idempotency response in one transaction. Only ACTIVE STUDENT
+        users. Checkout remains allowed outside opening hours. Cooldown: 10 seconds; retrying the same key returns
+        the stored response before checking QR expiry.'
+      security: *id030
+      x-roles: *id031
+      x-task: 5
+      x-retry-policy: IDEMPOTENCY_KEY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        - IDEMPOTENCY_KEY_REQUIRED
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - KIOSK_REVOKED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - IDEMPOTENCY_CONFLICT
+        - REQUEST_IN_PROGRESS
+        - QR_ALREADY_USED
+        - SCAN_TOO_SOON
+        - ALREADY_INSIDE
+        - NOT_INSIDE
+        '422':
+        - QR_INVALID
+        - QR_EXPIRED
+        - LIBRARY_CLOSED
+        - CAPACITY_REACHED
+        '429': *id021
+        '500': *id022
+        '503':
+        - DB_UNAVAILABLE
+        - REQUEST_ABORTED
+      x-acceptance-tests:
+      - Retry does not toggle state.
+      - Concurrent kiosks produce only one effect.
+      - A rolled-back QR is not consumed.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResult'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: 'UUID for one access intent; preserve it on retry. Retention: 24 hours.'
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QrAccessRequest'
+            example:
+              token: example-token-not-a-real-credential
+  /api/v1/access/manual:
+    post:
+      operationId: recordManualAccess
+      tags:
+      - Access
+      summary: recordManualAccess
+      description: Exactly one userId or visitorId; explicit CHECK_IN/CHECK_OUT action and required reason. User
+        check-in requires ACTIVE STUDENT; manual checkout may close a LOCKED user's session. Guests use MANUAL only.
+        Do not bypass opening hours/capacity. No cooldown because the action is explicit; the single-open-session
+        and idempotency requirements still apply.
+      security: &id032
+      - bearerAuth: []
+      x-roles: &id033
+      - LIBRARIAN
+      - ADMIN
+      x-task: 6
+      x-retry-policy: IDEMPOTENCY_KEY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        - IDEMPOTENCY_KEY_REQUIRED
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404':
+        - RESOURCE_NOT_FOUND
+        '409':
+        - IDEMPOTENCY_CONFLICT
+        - REQUEST_IN_PROGRESS
+        - ALREADY_INSIDE
+        - NOT_INSIDE
+        '422':
+        - VALIDATION_ERROR
+        - LIBRARY_CLOSED
+        - CAPACITY_REACHED
+        - SUBJECT_NOT_ELIGIBLE
+        '429': *id021
+        '500': *id022
+        '503':
+        - DB_UNAVAILABLE
+        - REQUEST_ABORTED
+      x-acceptance-tests:
+      - Manual checkout is allowed for LOCKED users.
+      - actor/reason are stored separately for each direction.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResult'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: 'UUID for one access intent; preserve it on retry. Retention: 24 hours.'
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualAccessRequest'
+            example:
+              userId: 14867700-9090-4000-8000-000000000001
+              action: CHECK_IN
+              reason: Recognition failed; the librarian confirms in person.
+  /api/v1/access/requests/{idempotencyKey}:
+    get:
+      operationId: getAccessRequestStatus
+      tags:
+      - Access
+      summary: getAccessRequestStatus
+      description: 'Recover a lost QR/FACE/MANUAL response using the App-generated key without resending clip/QR.
+        Scoped to the current principal; another principal''s key, missing keys, or expired retention return 404.
+        IN_PROGRESS: result/error/httpStatus=null; COMPLETED: exactly one result or error with the original httpStatus.
+        No new operation is created.'
+      security:
+      - bearerAuth: []
+      - kioskAuth: []
+      x-roles:
+      - LIBRARIAN
+      - ADMIN
+      - KIOSK
+      x-task: 5
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        - KIOSK_REVOKED
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Do not expose another kiosk/user's result.
+      - A lost FACE response can be recovered without uploading the clip again.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessRequestStatus'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: idempotencyKey
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/access-history:
+    get:
+      operationId: listAccessHistory
+      tags:
+      - History
+      summary: listAccessHistory
+      description: 'Filter by checkInTime; method means checkInMethod; userId/visitorId are mutually exclusive.
+        q searches code/referenceCode/fullName. Default date range: 30 days; maximum: 366 days.'
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Reject simultaneous userId and visitorId.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessSessionPage'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: from
+        in: query
+        required: false
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: false
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: userId
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      - name: visitorId
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      - name: isOpen
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: boolean
+      - name: method
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - FACE
+          - QR
+          - MANUAL
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - checkInTime,desc
+          - checkInTime,asc
+          default: checkInTime,desc
+  /api/v1/access-history/{sessionId}:
+    get:
+      operationId: getAccessSession
+      tags:
+      - History
+      summary: getAccessSession
+      description: Return session details with actors and reasons for both directions.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Students receive 403 on staff routes.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessSession'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: sessionId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/occupancy:
+    get:
+      operationId: getOccupancy
+      tags:
+      - Occupancy
+      summary: getOccupancy
+      description: Count open sessions for students/guests. Read count/revision within one transaction snapshot;
+        do not count librarians based on shifts.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - DB count matches the snapshot and is nonnegative.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Occupancy'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/occupancy/people:
+    get:
+      operationId: listOccupants
+      tags:
+      - Occupancy
+      summary: listOccupants
+      description: Open sessions only; q searches code/referenceCode/name. durationSeconds is calculated up to query
+        time. Omit email.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - A closed session disappears from the list.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OccupantPage'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: kind
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - USER
+          - VISITOR
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - checkInTime,asc
+          - checkInTime,desc
+          - code,asc
+          default: checkInTime,asc
+  /api/v1/visitors:
+    get:
+      operationId: listVisitors
+      tags:
+      - Visitors
+      summary: listVisitors
+      description: Search existing guest profiles by code/name; identical names may represent different identities.
+        Do not merge by fullName automatically.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Existing guests can be found before creating a new profile.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VisitorPage'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - createdAt,desc
+          - referenceCode,asc
+          default: createdAt,desc
+    post:
+      operationId: createVisitor
+      tags:
+      - Visitors
+      summary: createVisitor
+      description: Server assigns referenceCode GUEST-<sequence>; fullName is not UNIQUE. No password/email/account.
+        Do not automatically retry after a lost response; search the list first.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Guests do not require student codes; identical names are not incorrectly merged.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visitor'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateVisitorRequest'
+            example:
+              fullName: Alex Nguyen
+  /api/v1/visitors/{visitorId}:
+    get:
+      operationId: getVisitor
+      tags:
+      - Visitors
+      summary: getVisitor
+      description: Guest profile details for manual access recording.
+      security: *id032
+      x-roles: *id033
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Guest IDs work on the manual route.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Visitor'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: visitorId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/shifts:
+    get:
+      operationId: listShifts
+      tags:
+      - Shifts
+      summary: listShifts
+      description: 'Filter by overlap with [from,to), not only startsAt. Default: [now−7 days,now+30 days), all
+        statuses; q searches shift names; staffId filters ACTIVE assignments. Maximum: 366 days.'
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Overlapping overnight shifts still appear.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShiftPage'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: from
+        in: query
+        required: false
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: false
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+      - name: staffId
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      - name: q
+        in: query
+        required: false
+        description: Trim; case-insensitive contains search on code/name, not an SQL expression.
+        schema:
+          type: string
+          maxLength: 150
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - startsAt,asc
+          - startsAt,desc
+          default: startsAt,asc
+    post:
+      operationId: createShift
+      tags:
+      - Shifts
+      summary: createShift
+      description: A shift on a specific date, endsAt>startsAt, duration ≤24 hours. No staff-per-shift limit in
+        MVP. No recurring schedule. Do not automatically retry after a lost response.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Overnight shifts are valid; ends<=starts is rejected.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateShiftRequest'
+            example:
+              name: Alex Nguyen
+              startsAt: '2026-10-07T10:00:00+07:00'
+              endsAt: '2026-10-07T10:00:00+07:00'
+  /api/v1/shifts/{shiftId}:
+    get:
+      operationId: getShift
+      tags:
+      - Shifts
+      summary: getShift
+      description: Admin can read all shifts; librarians can only read shifts containing their own assignment, including
+        cancelled assignments for history. Outside ownership, return 404.
+      security: *id032
+      x-roles: *id033
+      x-task: 7
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Librarians cannot read unassigned shifts.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+    patch:
+      operationId: updateShift
+      tags:
+      - Shifts
+      summary: updateShift
+      description: Update name/startsAt/endsAt; CANCELLED shifts cannot be edited. Copy times to all ACTIVE assignments
+        and check overlaps in one transaction; roll back everything if any employee overlaps.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        - SHIFT_CANCELLED
+        - SHIFT_OVERLAP
+        '422':
+        - INVALID_TIME_RANGE
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - If changing a multi-person shift causes an overlap, no one's times change partially.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchShiftRequest'
+            example:
+              version: 0
+              name: Alex Nguyen
+  /api/v1/shifts/{shiftId}/cancel:
+    post:
+      operationId: cancelShift
+      tags:
+      - Shifts
+      summary: cancelShift
+      description: Soft-cancel the shift and all ACTIVE assignments, recording reason. If already cancelled with
+        the current version, return the current resource; stale version returns 409. Cancelled shifts cannot be
+        reopened.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Cancellation preserves history and releases the overlapping interval.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shift'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelShiftRequest'
+            example:
+              version: 0
+              reason: Recognition failed; the librarian confirms in person.
+  /api/v1/shifts/{shiftId}/assignments:
+    get:
+      operationId: listShiftAssignments
+      tags:
+      - Shifts
+      summary: listShiftAssignments
+      description: Return all assignments when status is omitted; staff contains only {id,code,fullName}, without
+        email.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Active/cancelled filtering is accurate.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentPage'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - createdAt,asc
+          - createdAt,desc
+          default: createdAt,asc
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+    post:
+      operationId: assignStaff
+      tags:
+      - Shifts
+      summary: assignStaff
+      description: version is shift.version. staffIds contains 1–100 unique IDs, only ACTIVE LIBRARIAN users; create
+        the batch atomically and increment shift.version. Existing ACTIVE assignments return 409, including assignments
+        in this shift.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        - SHIFT_CANCELLED
+        - SHIFT_OVERLAP
+        - ASSIGNMENT_EXISTS
+        '422':
+        - STAFF_NOT_ELIGIBLE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - One overlapping staff member rolls back the entire batch.
+      - Concurrent Admins cannot create overlaps.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentBatch'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignStaffRequest'
+            example:
+              version: 0
+              staffIds:
+              - 14867700-9090-4000-8000-000000000001
+  /api/v1/shifts/{shiftId}/assignments/{assignmentId}:
+    patch:
+      operationId: replaceAssignedStaff
+      tags:
+      - Shifts
+      summary: replaceAssignedStaff
+      description: version is assignment.version. Replace staff within one transaction rather than DELETE then POST;
+        inherit shift times. Return AssignmentBatch with the changed assignment and new shift.version. Only ACTIVE
+        shifts/assignments.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        - SHIFT_CANCELLED
+        - SHIFT_OVERLAP
+        - ASSIGNMENT_EXISTS
+        '422':
+        - STAFF_NOT_ELIGIBLE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - A failed staff replacement preserves the old assignment.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentBatch'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      - name: assignmentId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchAssignmentRequest'
+            example:
+              version: 0
+              staffId: 14867700-9090-4000-8000-000000000001
+    delete:
+      operationId: cancelAssignment
+      tags:
+      - Shifts
+      summary: cancelAssignment
+      description: version is assignment.version and is required in the query. Soft-cancel; increment assignment.version
+        and shift.version; preserve history. Already CANCELLED with the current version returns 204; stale version
+        returns 409.
+      security: *id025
+      x-roles: *id026
+      x-task: 7
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404': *id027
+        '409':
+        - VERSION_CONFLICT
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Individual cancellation does not affect other staff.
+      responses:
+        '204':
+          description: Success, no response body
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: version
+        in: query
+        required: true
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+      - name: shiftId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      - name: assignmentId
+        in: path
+        required: true
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/me/shifts:
+    get:
+      operationId: listMyShifts
+      tags:
+      - Shifts
+      summary: listMyShifts
+      description: Own schedule, filtered by assignment status; default all statuses, overlap with [now−7 days,now+30
+        days), maximum range 366 days. Shifts do not determine login permission.
+      security:
+      - bearerAuth: []
+      x-roles:
+      - LIBRARIAN
+      x-task: 7
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Employees only receive their own assignments.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MyShiftPage'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: page
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          default: 0
+      - name: size
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 100
+          default: 20
+      - name: from
+        in: query
+        required: false
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: false
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: status
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - CANCELLED
+      - name: sort
+        in: query
+        required: false
+        description: Only listed choices are accepted; never insert sort directly into SQL.
+        schema:
+          type: string
+          enum:
+          - startsAt,asc
+          - startsAt,desc
+          default: startsAt,asc
+  /api/v1/system-config:
+    get:
+      operationId: getSystemConfig
+      tags:
+      - Configuration
+      summary: getSystemConfig
+      description: Operational configuration and calibration metadata; omit JWT/DB/service secrets. Librarians can
+        read; Admin can edit.
+      security: *id032
+      x-roles: *id033
+      x-task: 8
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Responses contain no secrets.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+    patch:
+      operationId: updateSystemConfig
+      tags:
+      - Configuration
+      summary: updateSystemConfig
+      description: Atomic update with audit; timezone is fixed. Validate unique weekdays, ranges, and model-specific
+        thresholds. Null calibration fields disable real FACE. Enabling requires updating the entire modelVersion/distance/gap/liveness
+        calibration group; do not treat the old 0.65 value as a measured threshold.
+      security: *id025
+      x-roles: *id026
+      x-task: 8
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - VERSION_CONFLICT
+        '422':
+        - VALIDATION_ERROR
+        - MODEL_VERSION_MISMATCH
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Invalid configuration cannot be partially applied.
+      - Opening-hour changes take effect at runtime.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemConfig'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '409':
+          $ref: '#/components/responses/Error409'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchSystemConfigRequest'
+            example:
+              version: 0
+              maxCapacity: 250
+  /api/v1/analytics/access:
+    get:
+      operationId: getAccessAnalytics
+      tags:
+      - Analytics
+      summary: getAccessAnalytics
+      description: Range [from,to); DAY maximum 366 days, HOUR maximum 31 days; zero-fill buckets in the business
+        timezone. checkIns count entry times; checkOuts count exit times, including sessions entered before from;
+        averageStay uses sessions checked out within the range.
+      security: *id025
+      x-roles: *id026
+      x-task: 8
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Midnight uses the Vietnam calendar day; empty buckets contain zeros.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessAnalytics'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: from
+        in: query
+        required: true
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: true
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: bucket
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          enum:
+          - DAY
+          - HOUR
+          default: DAY
+  /api/v1/analytics/recognition:
+    get:
+      operationId: getRecognitionAnalytics
+      tags:
+      - Analytics
+      summary: getRecognitionAnalytics
+      description: Real kiosk recognition only, excluding enrollment/mock; maximum range 366 days. failureRate=failed/total,
+        null when total=0; matched means identity recognition succeeded even if the session is rejected by cooldown/capacity.
+        p50/p95 include every attempt.
+      security: *id025
+      x-roles: *id026
+      x-task: 8
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '422':
+        - INVALID_TIME_RANGE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - AI errors are counted, not only successful FACE logs.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecognitionAnalytics'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+      parameters:
+      - name: from
+        in: query
+        required: true
+        description: Include this boundary (inclusive).
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: to
+        in: query
+        required: true
+        description: Exclude this boundary (exclusive); to > from.
+        schema:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+      - name: kioskId
+        in: query
+        required: false
+        description: ''
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+  /api/v1/face-policy:
+    get:
+      operationId: getFacePolicy
+      tags:
+      - Biometrics
+      summary: getFacePolicy
+      description: Current policy version and capture limits; content is a business notice managed in file configuration,
+        without claiming legal certification.
+      security: *id028
+      x-roles: *id029
+      x-task: 10
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Consent uses the correct policy version.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FacePolicy'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+  /api/v1/me/face-consent:
+    post:
+      operationId: grantFaceConsent
+      tags:
+      - Biometrics
+      summary: grantFaceConsent
+      description: Require accepted=true and the current version. Existing ACTIVE consent for the same policy returns
+        200; new consent returns 201. Use a user lock; do not silently renew consent after a policy change.
+      security: *id028
+      x-roles: *id029
+      x-task: 10
+      x-retry-policy: IDEMPOTENT
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - CONSENT_POLICY_CHANGED
+        '422':
+        - VALIDATION_ERROR
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - accepted=false creates no consent.
+      - Repeated consent creates no second ACTIVE record.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceConsent'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '200':
+          description: Consent already exists for the same policy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceConsent'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsentRequest'
+            example:
+              policyVersion: '1.0'
+              accepted: true
+  /api/v1/me/face-enrollment:
+    get:
+      operationId: getMyFaceEnrollment
+      tags:
+      - Biometrics
+      summary: getMyFaceEnrollment
+      description: Return status even before enrollment (isEnrolled=false,imageCount=0,version from user.biometricVersion).
+        Omit embeddings/images.
+      security: *id028
+      x-roles: *id029
+      x-task: 10
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Version is 0 on creation; deletion/enrollment increments it.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceEnrollment'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+    post:
+      operationId: enrollMyFace
+      tags:
+      - Biometrics
+      summary: enrollMyFace
+      description: 3–5 JPEG/PNG images, each ≤5MiB, total ≤25MiB, max 16MP; version is the previously read biometricVersion.
+        One face per image, same person; AI checks pairwise consistency. Current-policy consent is required. Replace
+        embeddings atomically only if the whole set is valid; images stay in memory/cleaned-up temporary storage.
+      security: *id028
+      x-roles: *id029
+      x-task: 10
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - VERSION_CONFLICT
+        - CONSENT_REQUIRED
+        - CONSENT_POLICY_CHANGED
+        - ENROLLMENT_CHANGED
+        '413':
+        - PAYLOAD_TOO_LARGE
+        '422':
+        - IMAGE_INVALID
+        - FACE_NOT_FOUND
+        - MULTIPLE_FACES
+        - LOW_QUALITY
+        - INCONSISTENT_FACES
+        '429': *id021
+        '500': *id022
+        '503':
+        - AI_UNAVAILABLE
+        - MODEL_NOT_READY
+        - SIMULATED_RESULT_REJECTED
+      x-acceptance-tests:
+      - One invalid image does not remove the old enrollment.
+      - Consent revocation/account locking during inference prevents embedding writes.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceEnrollment'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/EnrollmentUpload'
+            encoding:
+              images:
+                contentType: image/jpeg, image/png
+    delete:
+      operationId: deleteMyFaceEnrollment
+      tags:
+      - Biometrics
+      summary: deleteMyFaceEnrollment
+      description: version=biometricVersion. Delete embeddings, revoke consent, and increment version in one transaction;
+        preserve history. If consent/embeddings are already absent and version matches, return 200 without another
+        increment. The initial version has no AI candidate cache, so deletion takes effect immediately.
+      security: *id028
+      x-roles: *id029
+      x-task: 10
+      x-retry-policy: VERSIONED
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - VERSION_CONFLICT
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - The user disappears from the candidate view; history remains.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceDeletion'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '409':
+          $ref: '#/components/responses/Error409'
+      parameters:
+      - name: version
+        in: query
+        required: true
+        description: ''
+        schema:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Optimistic lock; send the most recently read version.
+  /api/v1/access/face-challenge:
+    post:
+      operationId: issueFaceChallenge
+      tags:
+      - Access
+      summary: issueFaceChallenge
+      description: 'Challenge valid for 60 seconds with two actions: BLINK, then randomly chosen TURN_LEFT or TURN_RIGHT.
+        Bound to kiosk and calibration/model version. Backend stores instructions/expiry/consumedAt in DB; do not
+        automatically retry, but a new challenge may be requested.'
+      security: *id030
+      x-roles: *id031
+      x-task: 11
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - KIOSK_REVOKED
+        - INVALID_TOKEN_PURPOSE
+        '429': *id021
+        '500': *id022
+        '503':
+        - AI_UNAVAILABLE
+        - MODEL_NOT_READY
+        - MODEL_NOT_CALIBRATED
+      x-acceptance-tests:
+      - A challenge from another kiosk cannot be used.
+      responses:
+        '201':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceChallenge'
+          headers:
+            Location:
+              description: URI of the created resource.
+              schema:
+                type: string
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+  /api/v1/access/face:
+    post:
+      operationId: recordFaceAccess
+      tags:
+      - Access
+      summary: recordFaceAccess
+      description: 'MP4 clip: 1–3 seconds, ≤10MiB, ≤1280x720 and 30fps; no audio. Backend validates the challenge
+        and sends its stored DB instructions to AI. Only matched+livenessPassed+real+correct modelVersion reaches
+        AccessService. Consume the challenge only for a determined attempt outcome; AI timeout records no session,
+        returns 503, and requires QR/a new challenge. Do not accept studentId for client-selected identity.'
+      security: *id030
+      x-roles: *id031
+      x-task: 11
+      x-retry-policy: IDEMPOTENCY_KEY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        - IDEMPOTENCY_KEY_REQUIRED
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - KIOSK_REVOKED
+        - INVALID_TOKEN_PURPOSE
+        '409':
+        - IDEMPOTENCY_CONFLICT
+        - REQUEST_IN_PROGRESS
+        - CHALLENGE_ALREADY_USED
+        - SCAN_TOO_SOON
+        - ALREADY_INSIDE
+        - NOT_INSIDE
+        - ENROLLMENT_CHANGED
+        '413':
+        - PAYLOAD_TOO_LARGE
+        '422':
+        - CHALLENGE_EXPIRED
+        - CHALLENGE_INVALID
+        - VIDEO_INVALID
+        - FACE_NOT_FOUND
+        - MULTIPLE_FACES
+        - LOW_QUALITY
+        - LIVENESS_FAILED
+        - NO_MATCH
+        - LIBRARY_CLOSED
+        - CAPACITY_REACHED
+        - MODEL_VERSION_MISMATCH
+        '429': *id021
+        '500': *id022
+        '503':
+        - AI_UNAVAILABLE
+        - MODEL_NOT_READY
+        - MODEL_NOT_CALIBRATED
+        - SIMULATED_RESULT_REJECTED
+        - REQUEST_ABORTED
+        - DB_UNAVAILABLE
+      x-acceptance-tests:
+      - Fake/mock face results create no session.
+      - No match/AI downtime recommends QR.
+      - Concurrent face deletion/account locking before commit is blocked.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessResult'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '409':
+          $ref: '#/components/responses/Error409'
+        '413':
+          $ref: '#/components/responses/Error413'
+      parameters:
+      - name: Idempotency-Key
+        in: header
+        required: true
+        description: 'UUID for one access intent; preserve it on retry. Retention: 24 hours.'
+        schema:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FaceAccessUpload'
+            encoding:
+              clip:
+                contentType: video/mp4
+  /actuator/health:
+    get:
+      operationId: backendHealth
+      tags:
+      - Infrastructure
+      summary: backendHealth
+      description: Health UP when DB/schema are usable, independent of AI. DOWN returns 503. Do not expose credential/internal
+        details.
+      security: *id019
+      x-roles: *id020
+      x-task: 1
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '429': *id021
+        '500': *id022
+        '503':
+        - DB_UNAVAILABLE
+      x-acceptance-tests:
+      - AI downtime does not make backend health DOWN.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackendHealth'
+              example:
+                status: UP
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '503':
+          description: DB/schema not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackendHealth'
+              example:
+                status: DOWN
+x-realtime:
+  protocol: STOMP 1.2 over native WebSocket, no SockJS
+  url: ws://localhost:8080/ws
+  connectHeaders:
+    Authorization: Bearer <accessToken>
+  heartbeat: 10000,10000
+  subscribeDestination: /topic/occupancy
+  roles:
+  - LIBRARIAN
+  - ADMIN
+  eventSchema:
+    $ref: '#/components/schemas/RealtimeEvent'
+  ordering: Ignore event revision <= last seen; server sends after commit.
+  reconnect: SUBSCRIBE, then GET /api/v1/occupancy + /api/v1/occupancy/people; refetch when an event is newer than
+    the snapshot; delivery during disconnection is not guaranteed.
+  expiry: The server closes connections on token expiry/revocation or account role/status changes; clients refresh
+    and CONNECT again.
+  sendPolicy: Client SEND to app/broker destinations is blocked; this endpoint only pushes server→client.

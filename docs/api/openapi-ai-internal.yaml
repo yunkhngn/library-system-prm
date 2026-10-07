@@ -1,0 +1,650 @@
+openapi: 3.0.3
+info:
+  title: Library AI — internal API contract
+  version: 1.0.0-design
+  description: Backend-to-AI only. The App does not call this host. This is a design contract awaiting implementation.
+    Process liveness health is public; readiness/inference require X-Service-Key.
+servers:
+- url: http://ai-service:8001
+  description: Compose internal network
+tags:
+- name: AI
+components:
+  schemas:
+    AiHealth:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum:
+          - ok
+        service:
+          type: string
+          enum:
+          - ai-service
+      required:
+      - status
+      - service
+    AiReadiness:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          enum:
+          - READY
+          - NOT_READY
+        mode:
+          type: string
+          enum:
+          - MOCK
+          - REAL
+        modelId:
+          type: string
+          nullable: true
+        modelVersion:
+          type: string
+          nullable: true
+        livenessModelVersion:
+          type: string
+          nullable: true
+        simulated:
+          type: boolean
+        reason:
+          type: string
+          nullable: true
+      required:
+      - status
+      - mode
+      - modelId
+      - modelVersion
+      - livenessModelVersion
+      - simulated
+      - reason
+    ApiError:
+      type: object
+      additionalProperties: false
+      properties:
+        code:
+          type: string
+          enum:
+          - DB_UNAVAILABLE
+          - FACE_NOT_FOUND
+          - IMAGE_INVALID
+          - INCONSISTENT_FACES
+          - INTERNAL_ERROR
+          - INVALID_JSON
+          - INVALID_QUERY
+          - INVALID_REQUEST
+          - INVALID_SERVICE_KEY
+          - LOW_QUALITY
+          - MODEL_NOT_READY
+          - MODEL_VERSION_MISMATCH
+          - MULTIPLE_FACES
+          - PAYLOAD_TOO_LARGE
+          - RATE_LIMITED
+          - UNKNOWN_FIELD
+          - VIDEO_INVALID
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            $ref: '#/components/schemas/FieldError'
+        traceId:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+          example: '2026-10-07T10:00:00+07:00'
+        fallbackRecommended:
+          type: boolean
+          default: false
+      required:
+      - code
+      - message
+      - fieldErrors
+      - traceId
+      - timestamp
+      - fallbackRecommended
+    ChallengeInstruction:
+      type: object
+      additionalProperties: false
+      properties:
+        action:
+          type: string
+          enum:
+          - BLINK
+          - TURN_LEFT
+          - TURN_RIGHT
+        order:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 2
+      required:
+      - action
+      - order
+    FieldError:
+      type: object
+      additionalProperties: false
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+      required:
+      - field
+      - message
+    InternalEmbeddingResult:
+      type: object
+      additionalProperties: false
+      properties:
+        embeddings:
+          type: array
+          items:
+            type: array
+            items:
+              type: number
+              format: double
+            minItems: 512
+            maxItems: 512
+          minItems: 3
+          maxItems: 5
+        dimension:
+          type: integer
+          format: int64
+          enum:
+          - 512
+        modelId:
+          type: string
+        modelVersion:
+          type: string
+        simulated:
+          type: boolean
+      required:
+      - embeddings
+      - dimension
+      - modelId
+      - modelVersion
+      - simulated
+    InternalEnrollmentUpload:
+      type: object
+      additionalProperties: false
+      properties:
+        images:
+          type: array
+          items:
+            type: string
+            format: binary
+          minItems: 3
+          maxItems: 5
+      required:
+      - images
+    InternalRecognitionResult:
+      type: object
+      additionalProperties: false
+      properties:
+        matched:
+          type: boolean
+        userId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+          nullable: true
+        biometricVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          nullable: true
+        consentId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+          nullable: true
+        cosineDistance:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+          nullable: true
+        distanceGap:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+          nullable: true
+        livenessPassed:
+          type: boolean
+        livenessScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+        modelId:
+          type: string
+        modelVersion:
+          type: string
+        livenessModelVersion:
+          type: string
+        simulated:
+          type: boolean
+        outcome:
+          type: string
+          enum:
+          - MATCHED
+          - NO_MATCH
+          - LIVENESS_FAILED
+      required:
+      - matched
+      - userId
+      - biometricVersion
+      - consentId
+      - cosineDistance
+      - distanceGap
+      - livenessPassed
+      - livenessScore
+      - modelId
+      - modelVersion
+      - livenessModelVersion
+      - simulated
+      - outcome
+    InternalRecognitionUpload:
+      type: object
+      additionalProperties: false
+      properties:
+        clip:
+          type: string
+          format: binary
+        challengeId:
+          type: string
+          format: uuid
+          example: 14867700-9090-4000-8000-000000000001
+        challengeInstructions:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeInstruction'
+          minItems: 2
+          maxItems: 2
+          description: 'JSON part: backend supplies trusted ordered actions, not App.'
+        modelVersion:
+          type: string
+        maxCosineDistance:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+        minDistanceGap:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 2
+        livenessMinScore:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+      required:
+      - clip
+      - challengeId
+      - challengeInstructions
+      - modelVersion
+      - maxCosineDistance
+      - minDistanceGap
+      - livenessMinScore
+  responses:
+    Error400:
+      description: INVALID_REQUEST; INVALID_JSON; INVALID_QUERY; UNKNOWN_FIELD; IDEMPOTENCY_KEY_REQUIRED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: INVALID_JSON
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error401:
+      description: UNAUTHENTICATED; TOKEN_EXPIRED; TOKEN_REVOKED; INVALID_CREDENTIALS; INVALID_REFRESH_TOKEN; INVALID_SERVICE_KEY
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: INVALID_SERVICE_KEY
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error413:
+      description: PAYLOAD_TOO_LARGE
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: PAYLOAD_TOO_LARGE
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error422:
+      description: VALIDATION_ERROR; INVALID_TIME_RANGE; STAFF_NOT_ELIGIBLE; LIBRARY_CLOSED; CAPACITY_REACHED; QR_INVALID;
+        QR_EXPIRED; FACE_NOT_FOUND; MULTIPLE_FACES; LOW_QUALITY; LIVENESS_FAILED; NO_MATCH; CHALLENGE_EXPIRED; CHALLENGE_INVALID;
+        IMAGE_INVALID; VIDEO_INVALID; MODEL_VERSION_MISMATCH
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: FACE_NOT_FOUND
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error429:
+      description: RATE_LIMITED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: RATE_LIMITED
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+      headers:
+        Retry-After:
+          description: Recommended waiting time in seconds, when the server can estimate it.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+    Error500:
+      description: INTERNAL_ERROR
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: INTERNAL_ERROR
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+    Error503:
+      description: AI_UNAVAILABLE; MODEL_NOT_READY; MODEL_NOT_CALIBRATED; DB_UNAVAILABLE; SIMULATED_RESULT_REJECTED
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ApiError'
+          example:
+            code: DB_UNAVAILABLE
+            message: The request cannot be fulfilled.
+            fieldErrors: []
+            traceId: example-trace
+            timestamp: '2026-10-07T10:00:00+07:00'
+            fallbackRecommended: false
+      headers:
+        Retry-After:
+          description: Recommended waiting time in seconds, when the server can estimate it.
+          schema:
+            type: integer
+            format: int64
+            minimum: 1
+  securitySchemes:
+    serviceKey:
+      type: apiKey
+      in: header
+      name: X-Service-Key
+paths:
+  /api/v1/health:
+    get:
+      operationId: aiHealth
+      tags:
+      - AI
+      summary: aiHealth
+      description: Process liveness, independent of models/DB.
+      security: []
+      x-roles:
+      - PUBLIC
+      x-task: 9
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '429': &id001
+        - RATE_LIMITED
+        '500': &id002
+        - INTERNAL_ERROR
+      x-acceptance-tests:
+      - An active process returns 200 even when the model is not ready.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiHealth'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '429':
+          $ref: '#/components/responses/Error429'
+  /api/v1/ready:
+    get:
+      operationId: aiReady
+      tags:
+      - AI
+      summary: aiReady
+      description: REAL readiness requires model+checksum+liveness model+DB view. MOCK readiness has simulated=true
+        and cannot enable real face access. NOT_READY returns 503 with AiReadiness.
+      security: &id003
+      - serviceKey: []
+      x-roles: &id004
+      - BACKEND_SERVICE
+      x-task: 9
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_SERVICE_KEY
+        '429': *id001
+        '500': *id002
+      x-acceptance-tests:
+      - Missing models cannot report ready.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiReadiness'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '503':
+          description: Model/DB not ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiReadiness'
+              example:
+                status: NOT_READY
+                mode: REAL
+                modelId: null
+                modelVersion: null
+                livenessModelVersion: null
+                simulated: false
+                reason: MODEL_NOT_READY
+  /api/v1/embeddings:
+    post:
+      operationId: extractEmbeddings
+      tags:
+      - AI
+      summary: extractEmbeddings
+      description: Extract embeddings only; no DB writes. One face per image, 3–5 images of the same person; finite,
+        L2-normalized 512-dimensional vectors. The model is declared in readiness/manifest and results must match
+        it. Images stay in memory/cleaned-up temporary storage; bound the inference queue.
+      security: *id003
+      x-roles: *id004
+      x-task: 10
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_SERVICE_KEY
+        '413':
+        - PAYLOAD_TOO_LARGE
+        '422':
+        - IMAGE_INVALID
+        - FACE_NOT_FOUND
+        - MULTIPLE_FACES
+        - LOW_QUALITY
+        - INCONSISTENT_FACES
+        '429': *id001
+        '500': *id002
+        '503':
+        - MODEL_NOT_READY
+      x-acceptance-tests:
+      - Dimension=512, no NaN/zero vectors; mixed identities are rejected.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalEmbeddingResult'
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '413':
+          $ref: '#/components/responses/Error413'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InternalEnrollmentUpload'
+            encoding:
+              images:
+                contentType: image/jpeg, image/png
+  /api/v1/recognize:
+    post:
+      operationId: recognizeFace
+      tags:
+      - AI
+      summary: recognizeFace
+      description: No business writes. Read candidates view with userId/consentId/biometricVersion/model; exact
+        cosine distance grouped by distinct user, rejecting ties. MATCHED iff liveness and distance/gap pass; NO_MATCH
+        or LIVENESS_FAILED returns 200 with matched=false,userId=null. Validation/no-face/quality errors return
+        422. Do not accept candidate studentId from the App.
+      security: *id003
+      x-roles: *id004
+      x-task: 11
+      x-retry-policy: DO_NOT_AUTORETRY
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        '401':
+        - INVALID_SERVICE_KEY
+        '413':
+        - PAYLOAD_TOO_LARGE
+        '422':
+        - VIDEO_INVALID
+        - FACE_NOT_FOUND
+        - MULTIPLE_FACES
+        - LOW_QUALITY
+        - MODEL_VERSION_MISMATCH
+        '429': *id001
+        '500': *id002
+        '503':
+        - MODEL_NOT_READY
+        - DB_UNAVAILABLE
+      x-acceptance-tests:
+      - No match is a determined result, not fabricated success.
+      - The read-only DB role cannot modify tables.
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalRecognitionResult'
+              example:
+                matched: true
+                userId: 14867700-9090-4000-8000-000000000001
+                biometricVersion: 2
+                consentId: 14867700-9090-4000-8000-000000000001
+                cosineDistance: 0.2
+                distanceGap: 0.15
+                livenessPassed: true
+                livenessScore: 0.99
+                modelId: arcface-512
+                modelVersion: arcface-512-eval-v1
+                livenessModelVersion: anti-spoof-eval-v1
+                simulated: false
+                outcome: MATCHED
+        '422':
+          $ref: '#/components/responses/Error422'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '500':
+          $ref: '#/components/responses/Error500'
+        '503':
+          $ref: '#/components/responses/Error503'
+        '413':
+          $ref: '#/components/responses/Error413'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/InternalRecognitionUpload'
+            encoding:
+              clip:
+                contentType: video/mp4
+              challengeInstructions:
+                contentType: application/json
