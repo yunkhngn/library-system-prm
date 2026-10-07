@@ -19,6 +19,9 @@ class HealthAndDocsTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private com.library.checkin.service.SystemConfigService systemConfigService;
+
     @Test
     @DisplayName("Actuator health endpoint should be accessible without authentication")
     void actuatorHealthShouldBeAccessible() throws Exception {
