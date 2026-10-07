@@ -3,6 +3,9 @@
 !/docs/backend-ai-spec.md
 !/docs/yeu-cau-bo-sung.md
 !/docs/api/
+!/docs/deliverables/
+/docs/deliverables/*
+!/docs/deliverables/Library_Entry_Exit_System_SRS.docx
 !/docs/superpowers/
 /docs/superpowers/*
 !/docs/superpowers/plans/

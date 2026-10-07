@@ -10,7 +10,7 @@ WORKDIR /workspace
 
 # Cache dependency layer
 COPY pom.xml .
-RUN mvn dependency:go-offline -B || true
+RUN mvn dependency:resolve -B
 
 # Copy source code and package application (skipping tests for container image)
 COPY src ./src
@@ -30,9 +30,10 @@ USER spring:spring
 COPY --from=builder /workspace/target/*.jar app.jar
 
 # Configuration & environment defaults
-ENV PORT=8080
-ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+ENV SERVER_PORT=8080 \
+    PORT=8080 \
+    JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Dserver.port=${SERVER_PORT:-${PORT:-8080}} -jar app.jar"]

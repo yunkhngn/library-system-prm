@@ -1,0 +1,87 @@
+name: library-dev
+
+services:
+  # ----------------------------------------------------------------------------
+  # PostgreSQL Database with pgvector extension
+  # ----------------------------------------------------------------------------
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-library_db}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres_secure_password}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - library_pgdata_dev:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-library_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - library_dev_network
+
+  # ----------------------------------------------------------------------------
+  # Python FastAPI AI Microservice (Face Recognition & Liveness)
+  # ----------------------------------------------------------------------------
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AI_SERVICE_PORT:-8001}:8001"
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - AI_MOCK_MODE=${AI_MOCK_MODE:-true}
+      - FACE_SIMILARITY_THRESHOLD=${FACE_SIMILARITY_THRESHOLD:-0.65}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - library_dev_network
+
+  # ----------------------------------------------------------------------------
+  # Spring Boot Backend (REST API, WebSocket, Auth Gateway)
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=${SPRING_PROFILES_ACTIVE:-dev}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DB:-library_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-postgres}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:-postgres_secure_password}
+      - SERVER_PORT=8080
+      - JWT_SECRET=${JWT_SECRET:-super_secret_jwt_key_at_least_32_characters_long_123456}
+      - JWT_EXPIRATION=${JWT_EXPIRATION:-86400000}
+      - AI_SERVICE_URL=${AI_SERVICE_URL:-http://ai-service:8001}
+      - AI_MOCK_MODE=${AI_MOCK_MODE:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 25s
+    networks:
+      - library_dev_network
+
+networks:
+  library_dev_network:
+    driver: bridge
+
+volumes:
+  library_pgdata_dev:
+    driver: local
