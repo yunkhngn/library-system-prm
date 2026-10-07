@@ -1,0 +1,3966 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+        "title": "Library Backend \u2014 MVP API contract",
+        "description": "Library Entry/Exit and Occupancy Management System API. Supports QR and Face recognition workflows, role-based access, and STOMP realtime updates at /ws (/topic/occupancy).",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Current Server"
+        }
+    ],
+    "security": [
+        {
+            "bearerAuth": []
+        }
+    ],
+    "tags": [
+        {
+            "name": "Biometrics",
+            "description": "Student biometric consent and enrollment"
+        },
+        {
+            "name": "Biometrics",
+            "description": "Biometric policies, consent, and face enrollment"
+        },
+        {
+            "name": "Access",
+            "description": "Access control, check-in, check-out and history endpoints"
+        }
+    ],
+    "paths": {
+        "/api/v1/users/{userId}/password": {
+            "put": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "resetUserPassword",
+                "operationId": "resetUserPassword",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ResetPasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/password": {
+            "put": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "changeMyPassword",
+                "operationId": "changeMyPassword",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenPair"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/visitors": {
+            "get": {
+                "tags": [
+                    "Visitors"
+                ],
+                "operationId": "listVisitors",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "createdAt,desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VisitorPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Visitors"
+                ],
+                "operationId": "createVisitor",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateVisitorRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VisitorDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "listUsers",
+                "operationId": "listUsers",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "role",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "createdAt,desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "createUser",
+                "operationId": "createUser",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateUserRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/shifts": {
+            "get": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "listShifts",
+                "operationId": "listShifts",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "staffId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "startsAt,asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShiftPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "createShift",
+                "operationId": "createShift",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateShiftRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShiftDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/shifts/{shiftId}/cancel": {
+            "post": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "cancelShift",
+                "operationId": "cancelShift",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CancelShiftRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShiftDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/shifts/{shiftId}/assignments": {
+            "get": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "listShiftAssignments",
+                "operationId": "listShiftAssignments",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "createdAt,asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssignmentPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "assignStaff",
+                "operationId": "assignStaff",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/AssignStaffRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssignmentBatch"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/qr": {
+            "post": {
+                "tags": [
+                    "Student"
+                ],
+                "summary": "issueMyQr",
+                "operationId": "issueMyQr",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/QrToken"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/face-enrollment": {
+            "get": {
+                "tags": [
+                    "Biometrics"
+                ],
+                "summary": "getMyFaceEnrollment",
+                "description": "Get current student face enrollment status",
+                "operationId": "getMyEnrollment",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FaceEnrollment"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Biometrics"
+                ],
+                "summary": "enrollMyFace",
+                "description": "Upload 3-5 images to enroll face biometric",
+                "operationId": "enrollMyFace",
+                "parameters": [
+                    {
+                        "name": "version",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "images"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "images": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "format": "binary"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FaceEnrollment"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Biometrics"
+                ],
+                "summary": "deleteMyFaceEnrollment",
+                "description": "Revoke consent and delete enrolled face biometrics",
+                "operationId": "deleteMyEnrollment",
+                "parameters": [
+                    {
+                        "name": "version",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FaceDeletion"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/face-consent": {
+            "post": {
+                "tags": [
+                    "Biometrics"
+                ],
+                "summary": "grantFaceConsent",
+                "description": "Grant biometric face consent for student",
+                "operationId": "grantConsent",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ConsentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FaceConsent"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosks": {
+            "get": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "listKiosks",
+                "operationId": "listKiosks",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "isOnline",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "createdAt,desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskPage"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "createKiosk",
+                "operationId": "createKiosk",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateKioskRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskCredential"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/kiosks/{kioskId}/rotate-credential": {
+            "post": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "rotateKioskCredential",
+                "operationId": "rotateKioskCredential",
+                "parameters": [
+                    {
+                        "name": "kioskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/VersionRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskCredential"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/kiosks/token": {
+            "post": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "loginKiosk",
+                "operationId": "loginKiosk",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/KioskLoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskToken"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosks/heartbeat": {
+            "post": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "heartbeatKiosk",
+                "operationId": "heartbeatKiosk",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HeartbeatRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HeartbeatResult"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "kioskAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/refresh": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "refreshTokens",
+                "operationId": "refreshTokens",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefreshTokenRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenPair"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "logout",
+                "operationId": "logout",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RefreshTokenRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "login",
+                "operationId": "login",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TokenPair"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access/qr": {
+            "post": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Record QR access",
+                "operationId": "recordQrAccess",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/QrAccessRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access/manual": {
+            "post": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Record manual access",
+                "operationId": "recordManualAccess",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ManualAccessRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access/face": {
+            "post": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "recordFaceAccess",
+                "operationId": "recordFaceAccess",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "challengeId",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "required": [
+                                    "clip"
+                                ],
+                                "type": "object",
+                                "properties": {
+                                    "clip": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access/face-challenge": {
+            "post": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "issueFaceChallenge",
+                "operationId": "issueFaceChallenge",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FaceChallenge"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/users/{userId}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "getUser",
+                "operationId": "getUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "updateUser",
+                "operationId": "updateUser",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchUserRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/system-config": {
+            "get": {
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "getSystemConfig",
+                "operationId": "getSystemConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemConfig"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Configuration"
+                ],
+                "summary": "updateSystemConfig",
+                "operationId": "updateSystemConfig",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchSystemConfigRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/SystemConfig"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/shifts/{shiftId}": {
+            "get": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "getShift",
+                "operationId": "getShift",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShiftDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "updateShift",
+                "operationId": "updateShift",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchShiftRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ShiftDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/shifts/{shiftId}/assignments/{assignmentId}": {
+            "delete": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "cancelAssignment",
+                "operationId": "cancelAssignment",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "version",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int64"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    }
+                }
+            },
+            "patch": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "replaceAssignedStaff",
+                "operationId": "replaceAssignedStaff",
+                "parameters": [
+                    {
+                        "name": "shiftId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "assignmentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchAssignmentRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AssignmentBatch"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosks/{kioskId}": {
+            "get": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "getKiosk",
+                "operationId": "getKiosk",
+                "parameters": [
+                    {
+                        "name": "kioskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "patch": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "updateKiosk",
+                "operationId": "updateKiosk",
+                "parameters": [
+                    {
+                        "name": "kioskId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PatchKioskRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/visitors/{visitorId}": {
+            "get": {
+                "tags": [
+                    "Visitors"
+                ],
+                "operationId": "getVisitor",
+                "parameters": [
+                    {
+                        "name": "visitorId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/VisitorDto"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/occupancy": {
+            "get": {
+                "tags": [
+                    "Occupancy"
+                ],
+                "operationId": "getOccupancy",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Occupancy"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/occupancy/people": {
+            "get": {
+                "tags": [
+                    "Occupancy"
+                ],
+                "operationId": "listOccupants",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "kind",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OccupantPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me": {
+            "get": {
+                "tags": [
+                    "Profile"
+                ],
+                "summary": "getMyProfile",
+                "operationId": "getMyProfile",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UserDto"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/me/shifts": {
+            "get": {
+                "tags": [
+                    "Shifts"
+                ],
+                "summary": "listMyShifts",
+                "operationId": "listMyShifts",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "startsAt,asc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/MyShiftPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/access-status": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Get my access status",
+                "operationId": "getMyAccessStatus",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessStatus"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/access-history": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "List my access history",
+                "operationId": "listMyAccessHistory",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "checkInTime,desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessSessionPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/me/access-history/{sessionId}": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Get my access session",
+                "operationId": "getMyAccessSession",
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessSession"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/kiosks/me/config": {
+            "get": {
+                "tags": [
+                    "Kiosks"
+                ],
+                "summary": "getKioskRuntimeConfig",
+                "operationId": "getKioskRuntimeConfig",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/KioskRuntimeConfig"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "kioskAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/face-policy": {
+            "get": {
+                "tags": [
+                    "Biometrics"
+                ],
+                "summary": "getFacePolicy",
+                "description": "Current policy version and capture limits",
+                "operationId": "getFacePolicy",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/FacePolicy"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/analytics/recognition": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "getRecognitionAnalytics",
+                "operationId": "getRecognitionAnalytics",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "kioskId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RecognitionAnalytics"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/analytics/access": {
+            "get": {
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "getAccessAnalytics",
+                "operationId": "getAccessAnalytics",
+                "parameters": [
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "bucket",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "DAY"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessAnalytics"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access/requests/{idempotencyKey}": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Get access request status",
+                "operationId": "getAccessRequestStatus",
+                "parameters": [
+                    {
+                        "name": "idempotencyKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessRequestStatus"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access-history": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "List access history",
+                "operationId": "listAccessHistory",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 0
+                        }
+                    },
+                    {
+                        "name": "size",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "format": "int32",
+                            "default": 20
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time"
+                        }
+                    },
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "userId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "visitorId",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "isOpen",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "name": "method",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "sort",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "checkInTime,desc"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessSessionPage"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/access-history/{sessionId}": {
+            "get": {
+                "tags": [
+                    "Access"
+                ],
+                "summary": "Get access session",
+                "operationId": "getAccessSession",
+                "parameters": [
+                    {
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "content": {
+                            "*/*": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AccessSession"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "ResetPasswordRequest": {
+                "required": [
+                    "newPassword",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "newPassword": {
+                        "maxLength": 64,
+                        "minLength": 12,
+                        "type": "string"
+                    }
+                }
+            },
+            "UserDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "mustChangePassword": {
+                        "type": "boolean"
+                    },
+                    "faceEnrolled": {
+                        "type": "boolean"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ChangePasswordRequest": {
+                "required": [
+                    "currentPassword",
+                    "newPassword"
+                ],
+                "type": "object",
+                "properties": {
+                    "currentPassword": {
+                        "type": "string"
+                    },
+                    "newPassword": {
+                        "maxLength": 64,
+                        "minLength": 12,
+                        "type": "string"
+                    }
+                }
+            },
+            "TokenPair": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string"
+                    },
+                    "refreshToken": {
+                        "type": "string"
+                    },
+                    "tokenType": {
+                        "type": "string"
+                    },
+                    "expiresIn": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "user": {
+                        "$ref": "#/components/schemas/UserDto"
+                    }
+                }
+            },
+            "CreateVisitorRequest": {
+                "required": [
+                    "fullName"
+                ],
+                "type": "object",
+                "properties": {
+                    "fullName": {
+                        "maxLength": 150,
+                        "minLength": 1,
+                        "type": "string"
+                    }
+                }
+            },
+            "Actor": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    }
+                }
+            },
+            "VisitorDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "referenceCode": {
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    },
+                    "createdBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "CreateUserRequest": {
+                "required": [
+                    "code",
+                    "email",
+                    "fullName",
+                    "password",
+                    "role"
+                ],
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "maxLength": 50,
+                        "minLength": 0,
+                        "pattern": "^[^@]+$",
+                        "type": "string"
+                    },
+                    "email": {
+                        "maxLength": 254,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "maxLength": 255,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "role": {
+                        "pattern": "^(STUDENT|LIBRARIAN|ADMIN)$",
+                        "type": "string"
+                    },
+                    "password": {
+                        "maxLength": 64,
+                        "minLength": 8,
+                        "type": "string"
+                    },
+                    "mustChangePassword": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CreateShiftRequest": {
+                "required": [
+                    "endsAt",
+                    "name",
+                    "startsAt"
+                ],
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "maxLength": 150,
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ShiftDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "assignmentCount": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "createdBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "cancellationReason": {
+                        "type": "string"
+                    }
+                }
+            },
+            "CancelShiftRequest": {
+                "required": [
+                    "reason",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "reason": {
+                        "maxLength": 1000,
+                        "minLength": 1,
+                        "type": "string"
+                    }
+                }
+            },
+            "AssignStaffRequest": {
+                "required": [
+                    "staffIds",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "staffIds": {
+                        "maxItems": 100,
+                        "minItems": 1,
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                }
+            },
+            "AssignmentBatch": {
+                "type": "object",
+                "properties": {
+                    "shift": {
+                        "$ref": "#/components/schemas/ShiftDto"
+                    },
+                    "assignments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssignmentDto"
+                        }
+                    }
+                }
+            },
+            "AssignmentDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "shiftId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "staff": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "assignedBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "QrToken": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string"
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "refreshAfterSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "FaceConsent": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "policyVersion": {
+                        "type": "string"
+                    },
+                    "grantedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "revokedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "FaceEnrollment": {
+                "type": "object",
+                "properties": {
+                    "isEnrolled": {
+                        "type": "boolean"
+                    },
+                    "consent": {
+                        "$ref": "#/components/schemas/FaceConsent"
+                    },
+                    "imageCount": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "modelId": {
+                        "type": "string"
+                    },
+                    "modelVersion": {
+                        "type": "string"
+                    },
+                    "enrolledAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "ConsentRequest": {
+                "required": [
+                    "accepted",
+                    "policyVersion"
+                ],
+                "type": "object",
+                "properties": {
+                    "policyVersion": {
+                        "type": "string"
+                    },
+                    "accepted": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "CreateKioskRequest": {
+                "required": [
+                    "code",
+                    "mode",
+                    "name"
+                ],
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "maxLength": 50,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "name": {
+                        "maxLength": 100,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "mode": {
+                        "pattern": "^(ENTRY|EXIT|AUTO)$",
+                        "type": "string"
+                    }
+                }
+            },
+            "KioskCredential": {
+                "type": "object",
+                "properties": {
+                    "kiosk": {
+                        "$ref": "#/components/schemas/KioskDto"
+                    },
+                    "credential": {
+                        "type": "string"
+                    }
+                }
+            },
+            "KioskDto": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "mode": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "isOnline": {
+                        "type": "boolean"
+                    },
+                    "lastSeenAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "VersionRequest": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "KioskLoginRequest": {
+                "required": [
+                    "credential",
+                    "kioskId"
+                ],
+                "type": "object",
+                "properties": {
+                    "kioskId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "credential": {
+                        "maxLength": 256,
+                        "minLength": 32,
+                        "type": "string"
+                    }
+                }
+            },
+            "KioskToken": {
+                "type": "object",
+                "properties": {
+                    "accessToken": {
+                        "type": "string"
+                    },
+                    "tokenType": {
+                        "type": "string"
+                    },
+                    "expiresIn": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "kiosk": {
+                        "$ref": "#/components/schemas/KioskDto"
+                    }
+                }
+            },
+            "HeartbeatRequest": {
+                "required": [
+                    "appVersion",
+                    "cameraStatus"
+                ],
+                "type": "object",
+                "properties": {
+                    "appVersion": {
+                        "maxLength": 32,
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "cameraStatus": {
+                        "pattern": "^(OK|ERROR|UNAVAILABLE)$",
+                        "type": "string"
+                    }
+                }
+            },
+            "HeartbeatResult": {
+                "type": "object",
+                "properties": {
+                    "serverTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "heartbeatIntervalSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "kiosk": {
+                        "$ref": "#/components/schemas/KioskDto"
+                    }
+                }
+            },
+            "RefreshTokenRequest": {
+                "required": [
+                    "refreshToken"
+                ],
+                "type": "object",
+                "properties": {
+                    "refreshToken": {
+                        "type": "string"
+                    }
+                }
+            },
+            "LoginRequest": {
+                "required": [
+                    "identifier",
+                    "password"
+                ],
+                "type": "object",
+                "properties": {
+                    "identifier": {
+                        "maxLength": 254,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "password": {
+                        "maxLength": 64,
+                        "minLength": 0,
+                        "type": "string"
+                    }
+                }
+            },
+            "QrAccessRequest": {
+                "required": [
+                    "token"
+                ],
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "maxLength": 4096,
+                        "minLength": 20,
+                        "type": "string"
+                    }
+                }
+            },
+            "ManualAccessRequest": {
+                "required": [
+                    "action",
+                    "reason"
+                ],
+                "type": "object",
+                "properties": {
+                    "userId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "visitorId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "maxLength": 1000,
+                        "minLength": 1,
+                        "type": "string"
+                    }
+                }
+            },
+            "ChallengeInstruction": {
+                "required": [
+                    "action"
+                ],
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string"
+                    },
+                    "order": {
+                        "maximum": 2,
+                        "minimum": 1,
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "FaceCaptureRules": {
+                "type": "object",
+                "properties": {
+                    "imageMimeTypes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "minImages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "maxImages": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "maxImageBytes": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "maxTotalImageBytes": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "maxImagePixels": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "clipMimeTypes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "maxClipBytes": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "minClipDurationSeconds": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "maxClipDurationSeconds": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "maxClipFps": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "maxClipWidth": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "maxClipHeight": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "FaceChallenge": {
+                "type": "object",
+                "properties": {
+                    "challengeId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "instructions": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ChallengeInstruction"
+                        }
+                    },
+                    "captureRules": {
+                        "$ref": "#/components/schemas/FaceCaptureRules"
+                    }
+                }
+            },
+            "PatchUserRequest": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "code": {
+                        "maxLength": 50,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "email": {
+                        "maxLength": 254,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "maxLength": 255,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "role": {
+                        "pattern": "^(STUDENT|LIBRARIAN|ADMIN)$",
+                        "type": "string"
+                    },
+                    "status": {
+                        "pattern": "^(ACTIVE|LOCKED)$",
+                        "type": "string"
+                    }
+                }
+            },
+            "OpeningSlot": {
+                "type": "object",
+                "properties": {
+                    "dayOfWeek": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "opensAt": {
+                        "type": "string"
+                    },
+                    "closesAt": {
+                        "type": "string"
+                    }
+                }
+            },
+            "PatchSystemConfigRequest": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "openingHours": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OpeningSlot"
+                        }
+                    },
+                    "maxCapacity": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nearCapacityRatio": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "capacityEnforcement": {
+                        "type": "boolean"
+                    },
+                    "maxSessionDurationMinutes": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "scanCooldownSeconds": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "faceModelVersion": {
+                        "type": "string"
+                    },
+                    "faceMaxCosineDistance": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "faceMinDistanceGap": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "livenessMinScore": {
+                        "type": "number",
+                        "format": "double"
+                    }
+                }
+            },
+            "SystemConfig": {
+                "type": "object",
+                "properties": {
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "openingHours": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OpeningSlot"
+                        }
+                    },
+                    "maxCapacity": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "nearCapacityRatio": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "capacityEnforcement": {
+                        "type": "boolean"
+                    },
+                    "maxSessionDurationMinutes": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "scanCooldownSeconds": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "faceModelVersion": {
+                        "type": "string"
+                    },
+                    "faceMaxCosineDistance": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "faceMinDistanceGap": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "livenessMinScore": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    }
+                }
+            },
+            "PatchShiftRequest": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "maxLength": 150,
+                        "minLength": 1,
+                        "type": "string"
+                    },
+                    "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "PatchAssignmentRequest": {
+                "required": [
+                    "staffId",
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "staffId": {
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                }
+            },
+            "PatchKioskRequest": {
+                "required": [
+                    "version"
+                ],
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "name": {
+                        "maxLength": 100,
+                        "minLength": 0,
+                        "type": "string"
+                    },
+                    "mode": {
+                        "pattern": "^(ENTRY|EXIT|AUTO)$",
+                        "type": "string"
+                    },
+                    "status": {
+                        "pattern": "^(ACTIVE|REVOKED)$",
+                        "type": "string"
+                    }
+                }
+            },
+            "VisitorPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/VisitorDto"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "UserPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/UserDto"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "ShiftPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ShiftDto"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "AssignmentPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AssignmentDto"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "Occupancy": {
+                "type": "object",
+                "properties": {
+                    "count": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "maxCapacity": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "nearCapacity": {
+                        "type": "boolean"
+                    },
+                    "capacityEnforcement": {
+                        "type": "boolean"
+                    },
+                    "revision": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "asOf": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Occupant": {
+                "type": "object",
+                "properties": {
+                    "sessionId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "subject": {
+                        "$ref": "#/components/schemas/Subject"
+                    },
+                    "checkInTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "durationSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "checkInMethod": {
+                        "type": "string"
+                    }
+                }
+            },
+            "OccupantPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Occupant"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "Subject": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "fullName": {
+                        "type": "string"
+                    }
+                }
+            },
+            "MyShift": {
+                "type": "object",
+                "properties": {
+                    "shift": {
+                        "$ref": "#/components/schemas/ShiftDto"
+                    },
+                    "assignment": {
+                        "$ref": "#/components/schemas/AssignmentDto"
+                    }
+                }
+            },
+            "MyShiftPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/MyShift"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "AccessSession": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "subject": {
+                        "$ref": "#/components/schemas/Subject"
+                    },
+                    "checkInTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "checkOutTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "checkInMethod": {
+                        "type": "string"
+                    },
+                    "checkOutMethod": {
+                        "type": "string"
+                    },
+                    "checkInKiosk": {
+                        "$ref": "#/components/schemas/KioskSummary"
+                    },
+                    "checkOutKiosk": {
+                        "$ref": "#/components/schemas/KioskSummary"
+                    },
+                    "checkInBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "checkOutBy": {
+                        "$ref": "#/components/schemas/Actor"
+                    },
+                    "checkoutReason": {
+                        "type": "string"
+                    },
+                    "manualReason": {
+                        "type": "string"
+                    },
+                    "checkOutManualReason": {
+                        "type": "string"
+                    },
+                    "durationSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "AccessStatus": {
+                "type": "object",
+                "properties": {
+                    "isInside": {
+                        "type": "boolean"
+                    },
+                    "currentSession": {
+                        "$ref": "#/components/schemas/AccessSession"
+                    },
+                    "asOf": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "KioskSummary": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "code": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "AccessSessionPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AccessSession"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "KioskPage": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/KioskDto"
+                        }
+                    },
+                    "page": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "size": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "totalElements": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalPages": {
+                        "type": "integer",
+                        "format": "int32"
+                    }
+                }
+            },
+            "KioskRuntimeConfig": {
+                "type": "object",
+                "properties": {
+                    "kioskId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "mode": {
+                        "type": "string"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "openingHours": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OpeningSlot"
+                        }
+                    },
+                    "qrTtlSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "scanCooldownSeconds": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "faceEnabled": {
+                        "type": "boolean"
+                    },
+                    "faceCapture": {
+                        "$ref": "#/components/schemas/FaceCaptureRules"
+                    },
+                    "serverTime": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "configVersion": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "FacePolicy": {
+                "type": "object",
+                "properties": {
+                    "version": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "captureRules": {
+                        "$ref": "#/components/schemas/FaceCaptureRules"
+                    }
+                }
+            },
+            "OutcomeCount": {
+                "type": "object",
+                "properties": {
+                    "outcome": {
+                        "type": "string"
+                    },
+                    "count": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "RecognitionAnalytics": {
+                "type": "object",
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "to": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "totalAttempts": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "matched": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "failed": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "failureRate": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "p50LatencyMs": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "p95LatencyMs": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "outcomes": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OutcomeCount"
+                        }
+                    }
+                }
+            },
+            "AccessAnalytics": {
+                "type": "object",
+                "properties": {
+                    "from": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "to": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "timezone": {
+                        "type": "string"
+                    },
+                    "bucket": {
+                        "type": "string"
+                    },
+                    "totalCheckIns": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "totalCheckOuts": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "averageStaySeconds": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "buckets": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/AccessBucket"
+                        }
+                    }
+                }
+            },
+            "AccessBucket": {
+                "type": "object",
+                "properties": {
+                    "startsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "endsAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "checkIns": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "checkOuts": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "faceCheckIns": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "qrCheckIns": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "manualCheckIns": {
+                        "type": "integer",
+                        "format": "int64"
+                    }
+                }
+            },
+            "AccessRequestStatus": {
+                "type": "object",
+                "properties": {
+                    "requestId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "idempotencyKey": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "httpStatus": {
+                        "type": "integer",
+                        "format": "int32"
+                    },
+                    "result": {
+                        "$ref": "#/components/schemas/AccessResult"
+                    },
+                    "error": {
+                        "$ref": "#/components/schemas/ApiError"
+                    },
+                    "processingDeadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "AccessResult": {
+                "type": "object",
+                "properties": {
+                    "requestId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "sessionId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "subject": {
+                        "$ref": "#/components/schemas/Subject"
+                    },
+                    "method": {
+                        "type": "string"
+                    },
+                    "occurredAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "occupancy": {
+                        "$ref": "#/components/schemas/Occupancy"
+                    },
+                    "simulated": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "ApiError": {
+                "type": "object",
+                "properties": {
+                    "code": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "fieldErrors": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/FieldErrorItem"
+                        }
+                    },
+                    "traceId": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "fallbackRecommended": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "FieldErrorItem": {
+                "type": "object",
+                "properties": {
+                    "field": {
+                        "type": "string"
+                    },
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "FaceDeletion": {
+                "type": "object",
+                "properties": {
+                    "isEnrolled": {
+                        "type": "boolean"
+                    },
+                    "version": {
+                        "type": "integer",
+                        "format": "int64"
+                    },
+                    "deletedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "description": "User JWT purpose ACCESS; roles are checked by the backend.",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            },
+            "kioskAuth": {
+                "type": "http",
+                "description": "JWT purpose KIOSK; cannot be replaced by a user token.",
+                "scheme": "bearer",
+                "bearerFormat": "JWT"
+            }
+        }
+    }
+}

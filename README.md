@@ -126,39 +126,53 @@ The project is organized as a modular monorepo composed of three core services a
 ## Getting Started
 
 ### Prerequisites
-- Docker & Docker Compose (optional for full stack run)
-- JDK 21+ and Maven 3.9+ (for backend local development)
-- Python 3.11+ (for AI service local development)
+- Docker & Docker Compose v2+
+- JDK 21+ and Maven 3.9+ (or use included `./backend/mvnw`)
+- Python 3.11+ (for AI service local testing)
 - Flutter SDK 3.24+ (for client local development)
 
 ---
 
-### Option 1: Running with Docker Compose (Recommended)
+### Option 1: Quick Start with Scripts (Recommended)
 
-1. **Clone and setup environment variables:**
+1. **Setup environment and start services:**
    ```bash
    cp .env.example .env
-   # Edit .env if you wish to customize ports or credentials
+   ./scripts/dev-up.sh
    ```
+2. **Access Interactive Interfaces:**
+   - **Swagger UI:** `http://localhost:8080/swagger-ui/index.html` (or configured `BACKEND_PORT`)
+   - **OpenAPI Schema (Raw JSON):** `http://localhost:8080/v3/api-docs`
+   - **Actuator Health:** `http://localhost:8080/actuator/health`
+   - **AI Service Health:** `http://localhost:8001/api/v1/health`
+   - **AI OpenAPI Docs:** `http://localhost:8001/docs`
 
-2. **Start all services:**
+3. **Stop services:**
    ```bash
-   docker compose up -d
+   ./scripts/dev-down.sh
    ```
-
-3. **Service URLs:**
-   - **Flutter Web Client:** `http://localhost:3000`
-   - **Spring Boot API:** `http://localhost:8080`
-   - **FastAPI AI Service:** `http://localhost:8001` (Docs at `http://localhost:8001/docs`)
-   - **PostgreSQL:** `localhost:5432`
 
 ---
 
-### Option 2: Running Services Individually
+### Option 2: Full Testing & Verification
 
-#### 1. Start PostgreSQL
+Run the automated test runner which spins up an isolated test stack, executes AI unit tests, contract tests, and backend integration tests, then tears down test volumes automatically:
 ```bash
-docker compose up -d postgres
+./scripts/test-stack.sh
+```
+
+Export the runtime OpenAPI schema from a running backend into `docs/api/openapi.json`:
+```bash
+./scripts/export-openapi.sh
+```
+
+---
+
+### Option 3: Running Services Individually (Local Dev)
+
+#### 1. Start PostgreSQL (with pgvector)
+```bash
+docker compose -f compose.dev.yml up -d postgres
 ```
 
 #### 2. Start AI Service (FastAPI)
@@ -167,6 +181,7 @@ cd ai-service
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+export AI_MOCK_MODE=true
 uvicorn app.main:app --port 8001 --reload
 ```
 
@@ -184,6 +199,25 @@ flutter run -d chrome        # Web
 flutter run -d <device_id>   # Mobile / Desktop
 ```
 
+> **Mobile Device / Emulator Connectivity:**
+> - **Android Emulator:** Set `API_BASE_URL=http://10.0.2.2:8080` (maps to host `localhost:8080`).
+> - **iOS Simulator:** Set `API_BASE_URL=http://localhost:8080`.
+> - **Physical Device (LAN):** Set `API_BASE_URL=http://<YOUR_LAN_IP>:8080`.
+
+---
+
+## Seed Accounts (Development)
+
+When started with `SPRING_PROFILES_ACTIVE=dev`, the backend automatically seeds sample accounts (password: `dev_secret_password_123` or configured `DEV_SEED_PASSWORD`):
+
+| Identifier | Role | Purpose |
+|---|---|---|
+| `AD001` | `ADMIN` | System administrator, kiosk & user management |
+| `LIB001` | `LIBRARIAN` | Library staff, shift schedules, manual check-in |
+| `LIB002` | `LIBRARIAN` | Secondary librarian for shift overlap testing |
+| `SV001` | `STUDENT` | Standard student for QR entry and face consent |
+| `SV002` | `STUDENT` | Secondary student account |
+
 ---
 
 ## Environment Variables
@@ -194,7 +228,14 @@ flutter run -d <device_id>   # Mobile / Desktop
 | `POSTGRES_USER` | `postgres` | PostgreSQL Database user |
 | `POSTGRES_PASSWORD` | `postgres_secure_password` | PostgreSQL Database password |
 | `BACKEND_PORT` | `8080` | Spring Boot HTTP port |
-| `AI_SERVICE_PORT` | `8001` | FastAPI AI microservice port |
-| `CLIENT_PORT` | `3000` | Flutter Web container port |
+| `SPRING_PROFILES_ACTIVE` | `dev` | Active Spring profile (`dev`, `prod`, `it`, `test`) |
 | `JWT_SECRET` | *(Random 32+ char key)* | Secret key for signing JWTs |
+| `DEV_SEED_PASSWORD` | `dev_secret_password_123` | Default password for seeded accounts |
 | `AI_SERVICE_URL` | `http://ai-service:8001` | Backend connection to AI service |
+| `AI_SERVICE_KEY` | *(Secret key)* | Pre-shared key for AI internal API security |
+| `AI_MOCK_MODE` | `true` | `true` for synthetic embeddings/liveness; `false` for real InsightFace inference |
+| `AI_MODELS_READY` | `false` | Readiness indicator for loaded ML weights |
+| `FACE_SIMILARITY_THRESHOLD` | `0.65` | Distance threshold for face matching |
+| `AI_FACE_MODEL_VERSION` | `arcface-512-v1` | Face embedding model version string |
+| `CLIENT_PORT` | `3000` | Flutter Web container port |
+| `API_BASE_URL` | `http://localhost:8080` | Client target API endpoint |

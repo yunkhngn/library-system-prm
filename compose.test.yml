@@ -1,0 +1,83 @@
+name: library-test
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: library_test_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_test_password
+    ports:
+      - "${POSTGRES_TEST_PORT:-5439}:5432"
+    volumes:
+      - library_pgdata_test:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d library_test_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    networks:
+      - library_test_network
+
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${AI_SERVICE_TEST_PORT:-8009}:8001"
+    environment:
+      - PORT=8001
+      - HOST=0.0.0.0
+      - AI_MOCK_MODE=true
+      - FACE_SIMILARITY_THRESHOLD=0.65
+      - AI_SERVICE_KEY=dev_ai_internal_service_key_change_in_prod
+      - DATABASE_URL=postgresql://postgres:postgres_test_password@postgres:5432/library_test_db
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - library_test_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${BACKEND_TEST_PORT:-8089}:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/library_test_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=postgres_test_password
+      - AI_SERVICE_URL=http://ai-service:8001
+      - AI_SERVICE_KEY=dev_ai_internal_service_key_change_in_prod
+      - JWT_SECRET=super_secret_jwt_key_at_least_32_characters_long_123456
+      - DEV_SEED_PASSWORD=dev_secret_password_123
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep UP || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    networks:
+      - library_test_network
+
+volumes:
+  library_pgdata_test:
+    name: library_pgdata_test
+
+networks:
+  library_test_network:
+    name: library_test_network

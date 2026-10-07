@@ -128,7 +128,7 @@ def test_shift_assignments_and_overlap_exclusion(http_client: httpx.Client, seed
     lib1_id = lib_users[0]["id"]
 
     now = datetime.datetime.now(VN_TZ).replace(microsecond=0)
-    day_offset = 10 + (int(uuid.uuid4().hex[:4], 16) % 100)
+    day_offset = 1000 + (int(uuid.uuid4().hex[:6], 16) % 50000)
     s1_start = (now + datetime.timedelta(days=day_offset)).replace(hour=8, minute=0, second=0)
     s1_end = s1_start + datetime.timedelta(hours=6)  # 08:00 - 14:00
 
@@ -237,7 +237,7 @@ def test_shift_atomic_replacement_and_cancel_cascade(http_client: httpx.Client, 
         lib2_id = librarians[1]["id"]
 
     now = datetime.datetime.now(VN_TZ).replace(microsecond=0)
-    day_offset = 150 + (int(uuid.uuid4().hex[:4], 16) % 100)
+    day_offset = 60000 + (int(uuid.uuid4().hex[:6], 16) % 50000)
     starts = (now + datetime.timedelta(days=day_offset)).replace(hour=8, minute=0, second=0)
     ends = starts + datetime.timedelta(hours=8)
 
@@ -308,7 +308,7 @@ def test_librarian_schedule_and_ownership(http_client: httpx.Client, seed_passwo
     lib1_id = me_res.json()["id"]
 
     now = datetime.datetime.now(VN_TZ).replace(microsecond=0)
-    day_offset = 300 + (int(uuid.uuid4().hex[:4], 16) % 100)
+    day_offset = 120000 + (int(uuid.uuid4().hex[:6], 16) % 50000)
     starts = (now + datetime.timedelta(days=day_offset)).replace(hour=8, minute=0, second=0)
     ends = starts + datetime.timedelta(hours=6)
 
