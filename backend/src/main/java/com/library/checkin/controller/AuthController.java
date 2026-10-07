@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final com.library.checkin.service.QrService qrService;
 
     @Tag(name = "Auth")
     @Operation(summary = "login", operationId = "login")
@@ -62,5 +63,14 @@ public class AuthController {
     public ResponseEntity<TokenPair> changeMyPassword(@AuthenticationPrincipal CurrentPrincipal principal,
                                                       @Valid @RequestBody ChangePasswordRequest req) {
         return ResponseEntity.ok(authService.changePassword(principal, req));
+    }
+
+    @Tag(name = "Student")
+    @SecurityRequirement(name = "bearerAuth")
+    @Operation(summary = "issueMyQr", operationId = "issueMyQr")
+    @PostMapping("/me/qr")
+    public ResponseEntity<com.library.checkin.dto.QrToken> issueMyQr(
+            @AuthenticationPrincipal CurrentPrincipal principal) {
+        return ResponseEntity.ok(qrService.issueMyQr(principal));
     }
 }

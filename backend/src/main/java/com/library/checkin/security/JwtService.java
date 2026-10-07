@@ -40,6 +40,9 @@ public class JwtService {
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
+    public static final long KIOSK_TOKEN_VALIDITY_SECONDS = 3600; // 1 hour
+    public static final long QR_TOKEN_VALIDITY_SECONDS = 30; // 30 seconds
+
     public String generateAccessToken(User user, UUID familyId) {
         Instant now = Instant.now();
         Instant expiry = now.plus(Duration.ofSeconds(ACCESS_TOKEN_VALIDITY_SECONDS));
@@ -55,6 +58,43 @@ public class JwtService {
                 .claim("role", user.getRole())
                 .claim("code", user.getCode())
                 .claim("mustChangePassword", user.isMustChangePassword())
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String generateKioskToken(com.library.checkin.entity.Kiosk kiosk) {
+        Instant now = Instant.now();
+        Instant expiry = now.plus(Duration.ofSeconds(KIOSK_TOKEN_VALIDITY_SECONDS));
+
+        return Jwts.builder()
+                .subject(kiosk.getId().toString())
+                .audience().add(AUDIENCE).and()
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .claim("purpose", PURPOSE_KIOSK)
+                .claim("kioskId", kiosk.getId().toString())
+                .claim("credentialVersion", kiosk.getCredentialVersion())
+                .claim("code", kiosk.getCode())
+                .claim("mode", kiosk.getMode())
+                .claim("role", "KIOSK")
+                .signWith(signingKey)
+                .compact();
+    }
+
+    public String generateQrToken(User user, String nonce) {
+        Instant now = Instant.now();
+        Instant expiry = now.plus(Duration.ofSeconds(QR_TOKEN_VALIDITY_SECONDS));
+
+        return Jwts.builder()
+                .subject(user.getId().toString())
+                .audience().add(AUDIENCE).and()
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(expiry))
+                .claim("purpose", PURPOSE_QR)
+                .claim("userId", user.getId().toString())
+                .claim("code", user.getCode())
+                .claim("nonce", nonce)
+                .claim("role", user.getRole())
                 .signWith(signingKey)
                 .compact();
     }

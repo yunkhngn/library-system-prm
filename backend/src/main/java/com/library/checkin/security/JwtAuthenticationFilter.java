@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            sendError(response, HttpStatus.UNAUTHORIZED, "INVALID_TOKEN_PURPOSE", "Token purpose must be ACCESS");
+            sendError(response, HttpStatus.FORBIDDEN, "INVALID_TOKEN_PURPOSE", "Token purpose must be ACCESS");
             return;
         }
 
