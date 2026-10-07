@@ -81,7 +81,7 @@ class AutoCheckoutIT {
     void setUp() {
         jdbcTemplate.execute("""
             UPDATE system_config SET 
-                value = '{"timezone":"Asia/Ho_Chi_Minh","openingHours":[{"dayOfWeek":1,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":2,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":3,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":4,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":5,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":6,"opensAt":"08:00","closesAt":"22:00"},{"dayOfWeek":7,"opensAt":"08:00","closesAt":"22:00"}],"maxCapacity":250,"nearCapacityRatio":0.9,"capacityEnforcement":false,"maxSessionDurationMinutes":null,"scanCooldownSeconds":10,"faceModelVersion":null,"faceThreshold":null,"livenessThreshold":null,"biometricRetentionMonths":12}'::jsonb,
+                value = '{"timezone":"Asia/Ho_Chi_Minh","openingHours":[{"dayOfWeek":1,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":2,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":3,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":4,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":5,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":6,"opensAt":"00:00","closesAt":"23:59"},{"dayOfWeek":7,"opensAt":"00:00","closesAt":"23:59"}],"maxCapacity":250,"nearCapacityRatio":0.9,"capacityEnforcement":false,"maxSessionDurationMinutes":null,"scanCooldownSeconds":10,"faceModelVersion":null,"faceThreshold":null,"livenessThreshold":null,"biometricRetentionMonths":12}'::jsonb,
                 version = 1,
                 updated_by = NULL
             WHERE key = 'operational'

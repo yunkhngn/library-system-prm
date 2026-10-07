@@ -47,7 +47,15 @@ def test_ai_service_health():
 
 
 def test_ai_service_readiness():
+    service_key = os.getenv("AI_SERVICE_KEY", "dev-internal-service-key-change-in-prod")
     with httpx.Client(base_url=AI_BASE_URL, timeout=10) as client:
-        response = client.get("/api/v1/ready")
+        # Unauthenticated request must return 401
+        res_unauth = client.get("/api/v1/ready")
+        assert res_unauth.status_code == 401
+        assert res_unauth.json().get("code") == "INVALID_SERVICE_KEY"
+
+        # Authenticated request returns 200
+        response = client.get("/api/v1/ready", headers={"X-Service-Key": service_key})
         assert response.status_code == 200
         assert response.json().get("ready") is True
+        assert response.json().get("status") == "READY"
