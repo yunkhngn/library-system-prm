@@ -106,6 +106,28 @@ public class AccessService {
                             "Scan cooldown active. Please wait " + (config.scanCooldownSeconds() - elapsed) + " seconds");
                 }
             }
+        } else if (command.proof() instanceof FaceProof faceProof) {
+            user = userRepository.findById(faceProof.userId())
+                    .orElseThrow(() -> new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "NO_MATCH", "User not found"));
+
+            if (!"ACTIVE".equalsIgnoreCase(user.getStatus())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "User account is not ACTIVE");
+            }
+            if (!"STUDENT".equalsIgnoreCase(user.getRole())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "FORBIDDEN", "Only students may use biometric access");
+            }
+
+            Optional<CheckinLog> latestLog = checkinLogRepository.findLatestByUserId(user.getId());
+            if (latestLog.isPresent()) {
+                OffsetDateTime lastTime = latestLog.get().getCheckOutTime() != null
+                        ? latestLog.get().getCheckOutTime()
+                        : latestLog.get().getCheckInTime();
+                long elapsed = Duration.between(lastTime, now).abs().getSeconds();
+                if (elapsed < config.scanCooldownSeconds()) {
+                    throw new ApiException(HttpStatus.CONFLICT, "SCAN_TOO_SOON",
+                            "Scan cooldown active. Please wait " + (config.scanCooldownSeconds() - elapsed) + " seconds");
+                }
+            }
         } else {
             throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Unsupported proof type");
         }
@@ -143,8 +165,10 @@ public class AccessService {
         }
 
         // Apply changes
-        qrGrant.setConsumedAt(now);
-        qrGrantRepository.save(qrGrant);
+        if (qrGrant != null) {
+            qrGrant.setConsumedAt(now);
+            qrGrantRepository.save(qrGrant);
+        }
 
         UUID sessionId;
         long newCount;

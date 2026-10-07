@@ -22,6 +22,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import org.springframework.web.multipart.MultipartFile;
+
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -40,7 +43,81 @@ public class AccessController {
     private final AccessService accessService;
     private final AccessRequestService accessRequestService;
     private final QrCheckInStrategy qrCheckInStrategy;
+    private final com.library.checkin.service.FaceAccessService faceAccessService;
     private final ObjectMapper objectMapper;
+
+    @Operation(summary = "issueFaceChallenge", operationId = "issueFaceChallenge")
+    @PreAuthorize("hasRole('KIOSK')")
+    @PostMapping("/access/face-challenge")
+    public ResponseEntity<FaceChallenge> issueFaceChallenge(
+            @AuthenticationPrincipal CurrentPrincipal principal
+    ) {
+        FaceChallenge challenge = faceAccessService.issueFaceChallenge(principal.id());
+        return ResponseEntity.created(URI.create("/api/v1/access/face-challenge/" + challenge.challengeId()))
+                .body(challenge);
+    }
+
+    @Operation(summary = "recordFaceAccess", operationId = "recordFaceAccess")
+    @PreAuthorize("hasRole('KIOSK')")
+    @PostMapping(value = "/access/face", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> recordFaceAccess(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKeyHeader,
+            @AuthenticationPrincipal CurrentPrincipal principal,
+            @RequestParam("challengeId") String challengeIdStr,
+            @RequestParam("clip") MultipartFile clip
+    ) {
+        if (idempotencyKeyHeader == null || idempotencyKeyHeader.trim().isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "IDEMPOTENCY_KEY_REQUIRED", "Idempotency-Key header is required");
+        }
+
+        UUID idempotencyKey;
+        try {
+            idempotencyKey = UUID.fromString(idempotencyKeyHeader.trim());
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_REQUEST", "Idempotency-Key must be a valid UUID");
+        }
+
+        UUID challengeId;
+        try {
+            challengeId = UUID.fromString(challengeIdStr.trim());
+        } catch (IllegalArgumentException e) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "CHALLENGE_INVALID", "Invalid challengeId format", true);
+        }
+
+        String rawDigestInput = challengeId + ":" + (clip != null ? clip.getSize() : 0);
+        String digest = sha256Hex(rawDigestInput);
+
+        AccessRequestService.AccessClaim claim = accessRequestService.claim(
+                principal, idempotencyKey, "POST", "/api/v1/access/face", digest
+        );
+
+        if (claim.state() == AccessRequestService.ClaimState.COMPLETED) {
+            int status = claim.responseStatus() != null ? claim.responseStatus() : 200;
+            return ResponseEntity.status(status)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(claim.responseBody());
+        }
+
+        try {
+            AccessResult result = faceAccessService.recordFaceAccess(principal, claim.requestId(), challengeId, clip);
+            return ResponseEntity.ok(result);
+        } catch (ApiException e) {
+            if (e.getStatus().is4xxClientError() || "SIMULATED_RESULT_REJECTED".equals(e.getCode())) {
+                ApiError err = new ApiError(e.getCode(), e.getMessage(), List.of(), UUID.randomUUID().toString(), OffsetDateTime.now(), e.isFallbackRecommended());
+                try {
+                    accessRequestService.complete(claim.requestId(), e.getStatus().value(), objectMapper.writeValueAsString(err));
+                } catch (Exception ex) {
+                    log.error("Failed to persist error for face idempotency key", ex);
+                }
+            } else {
+                accessRequestService.abort(claim.requestId());
+            }
+            throw e;
+        } catch (Exception e) {
+            accessRequestService.abort(claim.requestId());
+            throw e;
+        }
+    }
 
     @Operation(summary = "Record QR access", operationId = "recordQrAccess")
     @PreAuthorize("hasRole('KIOSK')")

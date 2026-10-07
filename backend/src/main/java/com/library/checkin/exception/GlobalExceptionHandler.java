@@ -121,6 +121,77 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
 
+    @ExceptionHandler(org.springframework.web.bind.MissingRequestHeaderException.class)
+    public ResponseEntity<ApiError> handleMissingHeader(org.springframework.web.bind.MissingRequestHeaderException ex, HttpServletRequest request) {
+        String traceId = getOrCreateTraceId(request);
+        String code = "Idempotency-Key".equalsIgnoreCase(ex.getHeaderName()) ? "IDEMPOTENCY_KEY_REQUIRED" : "HEADER_MISSING";
+        ApiError error = new ApiError(
+                code,
+                ex.getMessage(),
+                List.of(new ApiError.FieldErrorItem(ex.getHeaderName(), "Required header is missing")),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MissingServletRequestParameterException.class)
+    public ResponseEntity<ApiError> handleMissingParam(org.springframework.web.bind.MissingServletRequestParameterException ex, HttpServletRequest request) {
+        String traceId = getOrCreateTraceId(request);
+        ApiError error = new ApiError(
+                "MISSING_PARAMETER",
+                ex.getMessage(),
+                List.of(new ApiError.FieldErrorItem(ex.getParameterName(), "Required parameter is missing")),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler({org.springframework.web.multipart.MultipartException.class, org.springframework.web.multipart.support.MissingServletRequestPartException.class})
+    public ResponseEntity<ApiError> handleMultipartException(Exception ex, HttpServletRequest request) {
+        String traceId = getOrCreateTraceId(request);
+        ApiError error = new ApiError(
+                "MULTIPART_ERROR",
+                ex.getMessage(),
+                List.of(),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ApiError> handleMediaTypeNotSupported(org.springframework.web.HttpMediaTypeNotSupportedException ex, HttpServletRequest request) {
+        String traceId = getOrCreateTraceId(request);
+        ApiError error = new ApiError(
+                "UNSUPPORTED_MEDIA_TYPE",
+                ex.getMessage(),
+                List.of(),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE).body(error);
+    }
+
+    @ExceptionHandler(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(org.springframework.web.method.annotation.MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
+        String traceId = getOrCreateTraceId(request);
+        ApiError error = new ApiError(
+                "VALIDATION_ERROR",
+                "Invalid parameter format: " + ex.getName(),
+                List.of(new ApiError.FieldErrorItem(ex.getName(), "Invalid format")),
+                traceId,
+                OffsetDateTime.now(),
+                false
+        );
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(error);
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneralException(Exception ex, HttpServletRequest request) {
         org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unhandled exception processing request " + request.getRequestURI(), ex);

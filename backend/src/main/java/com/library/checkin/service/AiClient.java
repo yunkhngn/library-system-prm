@@ -83,6 +83,89 @@ public class AiClient {
         }
     }
 
+    public boolean isReady() {
+        String endpoint = aiServiceUrl + "/api/v1/ready";
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Service-Key", serviceKey);
+        HttpEntity<Void> requestEntity = new HttpEntity<>(headers);
+
+        try {
+            ResponseEntity<JsonNode> response = restTemplate.exchange(
+                    endpoint,
+                    HttpMethod.GET,
+                    requestEntity,
+                    JsonNode.class
+            );
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return "READY".equalsIgnoreCase(response.getBody().path("status").asText());
+            }
+            return false;
+        } catch (Exception ex) {
+            log.warn("AI readiness probe failed at {}: {}", endpoint, ex.getMessage());
+            return false;
+        }
+    }
+
+    public com.library.checkin.dto.InternalRecognitionResult recognizeFace(
+            byte[] clipBytes,
+            java.util.UUID challengeId,
+            List<com.library.checkin.dto.ChallengeInstruction> instructions,
+            String modelVersion,
+            double maxCosineDistance,
+            double minDistanceGap,
+            double livenessMinScore
+    ) {
+        String endpoint = aiServiceUrl + "/api/v1/recognize";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+        headers.set("X-Service-Key", serviceKey);
+
+        MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        ByteArrayResource clipResource = new ByteArrayResource(clipBytes) {
+            @Override
+            public String getFilename() {
+                return "clip.mp4";
+            }
+        };
+        body.add("clip", clipResource);
+        body.add("challengeId", challengeId.toString());
+
+        try {
+            String instructionsJson = objectMapper.writeValueAsString(instructions);
+            body.add("challengeInstructions", instructionsJson);
+        } catch (Exception e) {
+            throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Failed serializing challenge instructions");
+        }
+
+        body.add("modelVersion", modelVersion != null ? modelVersion : "arcface-512-v1");
+        body.add("maxCosineDistance", String.valueOf(maxCosineDistance));
+        body.add("minDistanceGap", String.valueOf(minDistanceGap));
+        body.add("livenessMinScore", String.valueOf(livenessMinScore));
+
+        HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+        try {
+            ResponseEntity<com.library.checkin.dto.InternalRecognitionResult> response = restTemplate.postForEntity(
+                    endpoint,
+                    requestEntity,
+                    com.library.checkin.dto.InternalRecognitionResult.class
+            );
+            return response.getBody();
+        } catch (HttpStatusCodeException ex) {
+            handleHttpError(ex);
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "Failed communicating with AI service");
+        } catch (ResourceAccessException ex) {
+            log.warn("AI service unreachable at {}: {}", endpoint, ex.getMessage());
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "AI service is currently unreachable");
+        } catch (ApiException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            log.error("Unexpected error calling AI service: {}", ex.getMessage(), ex);
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE, "AI_UNAVAILABLE", "AI service unexpected error: " + ex.getMessage());
+        }
+    }
+
     private void handleHttpError(HttpStatusCodeException ex) {
         HttpStatus status = HttpStatus.valueOf(ex.getStatusCode().value());
         String responseBody = ex.getResponseBodyAsString();

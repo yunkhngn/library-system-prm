@@ -62,6 +62,9 @@ class HealthAndDocsTest {
     private com.library.checkin.repository.FaceEmbeddingRepository faceEmbeddingRepository;
 
     @org.springframework.boot.test.mock.mockito.MockBean
+    private com.library.checkin.repository.FaceChallengeRepository faceChallengeRepository;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
     private com.library.checkin.service.AiClient aiClient;
 
     @Test

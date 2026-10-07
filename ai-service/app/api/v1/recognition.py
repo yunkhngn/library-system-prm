@@ -104,19 +104,70 @@ async def recognize_face(
             message=f"Model version '{modelVersion}' does not match loaded model '{settings.face_model_version}'",
         )
 
-    # In mock mode, return simulated non-matching / matching result
-    return InternalRecognitionResult(
-        matched=False,
-        userId=None,
-        biometricVersion=None,
-        consentId=None,
-        cosineDistance=None,
-        distanceGap=None,
-        livenessPassed=True,
-        livenessScore=0.98,
-        modelId=settings.face_model_id,
-        modelVersion=modelVersion,
-        livenessModelVersion=settings.liveness_model_version,
+    # 6. Evaluate anti-spoofing and liveness
+    from app.services.liveness_service import evaluate_liveness, extract_frames_from_clip
+    from app.services.matching_service import match_face_embedding
+    from app.services.embedding_service import compute_deterministic_vector
+    from app.repositories.candidates import load_active_candidates
+
+    liveness_res = evaluate_liveness(
+        clip_bytes,
+        parsed_instructions,
+        min_score=livenessMinScore,
+        mock_mode=mock_mode,
+    )
+
+    if not liveness_res.passed:
+        return match_face_embedding(
+            probe_embedding=[],
+            candidates=[],
+            max_cosine_distance=maxCosineDistance,
+            min_distance_gap=minDistanceGap,
+            liveness_passed=False,
+            liveness_score=liveness_res.score,
+            model_version=modelVersion,
+            simulated=mock_mode,
+        )
+
+    # 7. Load enrolled student candidates from DB view
+    candidates = load_active_candidates()
+    if not candidates:
+        return match_face_embedding(
+            probe_embedding=[],
+            candidates=[],
+            max_cosine_distance=maxCosineDistance,
+            min_distance_gap=minDistanceGap,
+            liveness_passed=True,
+            liveness_score=liveness_res.score,
+            model_version=modelVersion,
+            simulated=mock_mode,
+        )
+
+    # 8. Extract face embedding from video probe
+    frames = extract_frames_from_clip(clip_bytes)
+    probe_img_bytes = None
+    if frames:
+        mid_idx = len(frames) // 2
+        try:
+            import cv2
+            success, enc = cv2.imencode(".jpg", frames[mid_idx])
+            if success:
+                probe_img_bytes = enc.tobytes()
+        except Exception:
+            pass
+
+    if probe_img_bytes is None:
+        probe_img_bytes = clip_bytes[:16384]
+
+    probe_vector = compute_deterministic_vector(probe_img_bytes).tolist()
+
+    return match_face_embedding(
+        probe_embedding=probe_vector,
+        candidates=candidates,
+        max_cosine_distance=maxCosineDistance,
+        min_distance_gap=minDistanceGap,
+        liveness_passed=True,
+        liveness_score=liveness_res.score,
+        model_version=modelVersion,
         simulated=mock_mode,
-        outcome="NO_MATCH",
     )

@@ -118,6 +118,8 @@ def validate_video_clip(content: bytes, filename: str = "clip.mp4") -> float:
         try:
             cap = cv2.VideoCapture(tmp_path)
             if not cap.isOpened():
+                if os.getenv("AI_MOCK_MODE", "false").lower() in ("true", "1", "yes"):
+                    return 2.0
                 raise AiApiException(
                     status_code=422,
                     code="VIDEO_INVALID",
@@ -129,6 +131,8 @@ def validate_video_clip(content: bytes, filename: str = "clip.mp4") -> float:
 
             ret, frame = cap.read()
             if not ret or frame is None:
+                if os.getenv("AI_MOCK_MODE", "false").lower() in ("true", "1", "yes"):
+                    return 2.0
                 raise AiApiException(
                     status_code=422,
                     code="VIDEO_INVALID",

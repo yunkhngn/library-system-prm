@@ -79,3 +79,7 @@ class CandidateRepository:
 
 
 candidate_repository = CandidateRepository()
+
+
+def load_active_candidates() -> List[Candidate]:
+    return candidate_repository.load_active_candidates()
