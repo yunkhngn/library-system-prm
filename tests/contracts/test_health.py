@@ -2,8 +2,8 @@ import os
 import httpx
 import pytest
 
-BACKEND_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8080")
-AI_BASE_URL = os.environ.get("AI_SERVICE_URL", "http://localhost:8001")
+BACKEND_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8082")
+AI_BASE_URL = os.environ.get("AI_SERVICE_URL", "http://localhost:8002")
 
 
 def test_backend_actuator_health():
