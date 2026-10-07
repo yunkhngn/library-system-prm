@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,4 +59,38 @@ public class SystemConfigService {
             throw new RuntimeException("Failed to parse operational configuration JSON", e);
         }
     }
+
+    public boolean isLibraryOpen(OffsetDateTime time, SystemConfig config) {
+        if (config == null || config.openingHours() == null || config.openingHours().isEmpty()) {
+            return true;
+        }
+
+        java.time.ZoneId zone = java.time.ZoneId.of(config.timezone() != null ? config.timezone() : "Asia/Ho_Chi_Minh");
+        OffsetDateTime zonedTime = time.atZoneSameInstant(zone).toOffsetDateTime();
+        int dayOfWeek = zonedTime.getDayOfWeek().getValue();
+        java.time.LocalTime currentTime = zonedTime.toLocalTime();
+
+        for (OpeningSlot slot : config.openingHours()) {
+            if (slot.dayOfWeek() == dayOfWeek) {
+                java.time.LocalTime opens = java.time.LocalTime.parse(slot.opensAt());
+                java.time.LocalTime closes = java.time.LocalTime.parse(slot.closesAt());
+
+                if (opens.equals(closes)) {
+                    return true;
+                }
+                if (opens.isBefore(closes)) {
+                    if (!currentTime.isBefore(opens) && currentTime.isBefore(closes)) {
+                        return true;
+                    }
+                } else {
+                    // overnight slot
+                    if (!currentTime.isBefore(opens) || currentTime.isBefore(closes)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
 }
+

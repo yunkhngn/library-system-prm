@@ -80,6 +80,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiError> handleGeneralException(Exception ex, HttpServletRequest request) {
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unhandled exception processing request " + request.getRequestURI(), ex);
         String traceId = getOrCreateTraceId(request);
         ApiError error = new ApiError(
                 "INTERNAL_ERROR",

@@ -79,7 +79,8 @@ public class KioskAuthenticationFilter extends OncePerRequestFilter {
         }
 
         Kiosk kiosk = kioskOpt.get();
-        Long tokenCredVersion = claims.get("credentialVersion", Long.class);
+        Number tokenCredVersionNum = claims.get("credentialVersion", Number.class);
+        Long tokenCredVersion = tokenCredVersionNum != null ? tokenCredVersionNum.longValue() : null;
         if (tokenCredVersion == null || !tokenCredVersion.equals(kiosk.getCredentialVersion())) {
             sendError(response, HttpStatus.UNAUTHORIZED, "TOKEN_REVOKED", "Kiosk credential has been rotated");
             return;

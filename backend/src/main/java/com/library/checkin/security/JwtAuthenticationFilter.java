@@ -85,7 +85,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Long tokenAuthVersion = claims.get("authVersion", Long.class);
+        Number tokenAuthVersionNum = claims.get("authVersion", Number.class);
+        Long tokenAuthVersion = tokenAuthVersionNum != null ? tokenAuthVersionNum.longValue() : null;
         if (tokenAuthVersion == null || !tokenAuthVersion.equals(user.getAuthVersion())) {
             sendError(response, HttpStatus.UNAUTHORIZED, "TOKEN_REVOKED", "Token has been revoked due to credential changes");
             return;
