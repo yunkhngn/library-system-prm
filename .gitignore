@@ -9,6 +9,11 @@
 /docs/superpowers/plans/*
 !/docs/superpowers/plans/2026-10-07-backend-ai.md
 
+# Superpowers & Worktrees
+.superpowers/
+.worktrees/
+worktrees/
+
 # macOS
 .DS_Store
 .AppleDouble
