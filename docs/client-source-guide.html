@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Library Access · Hướng dẫn source code Flutter client</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #173B63;
+    --action: #2563EB;
+    --bg: #F5F7FA;
+    --surface: #FFFFFF;
+    --text: #182230;
+    --muted: #667085;
+    --border: #E4E7EC;
+    --success: #15803D;
+    --warning: #B45309;
+    --error: #B42318;
+    --info-bg: #EFF6FF;
+    --success-bg: #ECFDF3;
+    --warning-bg: #FFF7ED;
+    --error-bg: #FEF3F2;
+    --code-bg: #0F1B2D;
+    --sidebar: 288px;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+  body {
+    margin: 0;
+    font-family: "Be Vietnam Pro", "Noto Sans", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--text);
+    background: var(--bg);
+  }
+  a { color: var(--action); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* Sidebar */
+  nav.toc {
+    position: fixed; inset: 0 auto 0 0; width: var(--sidebar);
+    background: var(--navy); color: #fff; overflow-y: auto;
+    padding: 28px 20px 40px;
+  }
+  nav.toc .brand { font-weight: 700; font-size: 18px; }
+  nav.toc .sub { font-size: 12px; color: rgba(255,255,255,.7); margin-bottom: 24px; }
+  nav.toc .group { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: rgba(255,255,255,.55); margin: 20px 8px 6px; }
+  nav.toc a {
+    display: block; color: rgba(255,255,255,.82); font-size: 14px;
+    padding: 6px 10px; border-radius: 8px;
+  }
+  nav.toc a:hover { background: rgba(255,255,255,.1); color: #fff; text-decoration: none; }
+  nav.toc a.file { font-family: "JetBrains Mono", monospace; font-size: 12.5px; padding-left: 18px; }
+
+  main { margin-left: var(--sidebar); padding: 48px 56px 96px; max-width: calc(var(--sidebar) + 1040px); }
+  @media (max-width: 960px) {
+    nav.toc { position: static; width: auto; }
+    main { margin-left: 0; padding: 32px 20px 64px; }
+  }
+
+  .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--action); }
+  h1 { font-size: 34px; line-height: 1.25; margin: 8px 0 12px; color: var(--navy); }
+  h2 { font-size: 26px; line-height: 1.3; margin: 64px 0 16px; color: var(--navy); padding-top: 8px; border-top: 1px solid var(--border); }
+  h3 { font-size: 19px; line-height: 1.4; margin: 32px 0 10px; }
+  h4 { font-size: 16px; margin: 20px 0 8px; }
+  p { margin: 0 0 14px; }
+  .lead { font-size: 17px; color: var(--muted); max-width: 820px; }
+  ul, ol { padding-left: 22px; margin: 0 0 14px; }
+  li { margin-bottom: 6px; }
+
+  code {
+    font-family: "JetBrains Mono", Consolas, monospace; font-size: .88em;
+    background: #EEF2F7; padding: 1px 6px; border-radius: 6px; color: #0B3A75;
+  }
+  pre {
+    background: var(--code-bg); color: #E6EDF6; padding: 18px 20px; border-radius: 12px;
+    overflow-x: auto; font-size: 13.5px; line-height: 1.6; margin: 0 0 18px;
+  }
+  pre code { background: none; padding: 0; color: inherit; font-size: inherit; }
+  .c { color: #7D8FA9; }       /* comment */
+  .k { color: #7CB7FF; }       /* keyword */
+  .s { color: #A8E0A1; }       /* string */
+  .t { color: #F5C26B; }       /* type */
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 22px 24px; margin: 0 0 18px;
+  }
+  .file-card { scroll-margin-top: 24px; }
+  .file-card header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; margin-bottom: 10px; }
+  .file-card .path { font-family: "JetBrains Mono", monospace; font-weight: 500; font-size: 15px; color: var(--navy); }
+  .tag { display: inline-block; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 999px; }
+  .tag.real { background: var(--success-bg); color: var(--success); }
+  .tag.stub { background: var(--warning-bg); color: var(--warning); }
+  .tag.p1 { background: var(--info-bg); color: var(--action); }
+  .tag.p2 { background: #F4EBFF; color: #6941C6; }
+  .tag.p5 { background: #FDF2FA; color: #C11574; }
+  .tag.core { background: #F2F4F7; color: var(--muted); }
+  .why { border-left: 3px solid var(--action); padding: 4px 0 4px 14px; margin: 10px 0 12px; color: #344054; }
+  .why b { color: var(--action); }
+
+  .callout { border-radius: 12px; padding: 16px 20px; margin: 0 0 18px; }
+  .callout.info { background: var(--info-bg); }
+  .callout.warn { background: var(--warning-bg); }
+  .callout.ok { background: var(--success-bg); }
+  .callout strong:first-child { display: block; margin-bottom: 4px; }
+
+  table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 0 0 18px; font-size: 15px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: #F9FAFB; font-weight: 600; font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  tr:last-child td { border-bottom: none; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 14px; margin-bottom: 18px; }
+  .grid .card { margin: 0; }
+  .grid .card h4 { margin-top: 0; }
+
+  /* Layer diagram */
+  .layers { display: grid; gap: 10px; margin: 6px 0 20px; }
+  .layer { border-radius: 12px; padding: 14px 18px; border: 1px solid var(--border); background: var(--surface); }
+  .layer .name { font-weight: 600; }
+  .layer .desc { color: var(--muted); font-size: 14px; }
+  .layer.l1 { border-left: 6px solid #C11574; }
+  .layer.l2 { border-left: 6px solid #6941C6; }
+  .layer.l3 { border-left: 6px solid var(--action); }
+  .layer.l4 { border-left: 6px solid var(--navy); }
+  .arrow { text-align: center; color: var(--muted); font-size: 13px; }
+
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0 18px; }
+  .flow span.step { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  .flow span.to { color: var(--muted); }
+
+  .steps { counter-reset: step; list-style: none; padding: 0; }
+  .steps > li { counter-increment: step; position: relative; padding-left: 44px; margin-bottom: 18px; }
+  .steps > li::before {
+    content: counter(step); position: absolute; left: 0; top: 0;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: #fff;
+    display: grid; place-items: center; font-weight: 600; font-size: 14px;
+  }
+  footer { margin-top: 64px; color: var(--muted); font-size: 13px; }
+
+  /* Design patterns */
+  .tag.cre { background: #ECFDF3; color: #067647; }
+  .tag.str { background: #EFF6FF; color: #1D4ED8; }
+  .tag.beh { background: #FFF7ED; color: #B45309; }
+  .tag.arc { background: #F4EBFF; color: #6941C6; }
+  .pattern h3 { margin: 0; font-size: 20px; color: var(--navy); }
+  .pattern .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .pattern .where { font-size: 14px; color: var(--muted); margin-bottom: 12px; }
+  .pattern .where code { font-size: 12.5px; }
+  .pattern dl { display: grid; grid-template-columns: 170px 1fr; gap: 8px 16px; margin: 12px 0 0; }
+  .pattern dt { font-weight: 600; color: #344054; }
+  .pattern dd { margin: 0; }
+  @media (max-width: 720px) { .pattern dl { grid-template-columns: 1fr; } }
+  .uml { font-family: "JetBrains Mono", monospace; font-size: 13px; background: #F9FAFB; border: 1px dashed var(--border); border-radius: 12px; padding: 16px 18px; white-space: pre; overflow-x: auto; margin: 0 0 14px; color: #344054; }
+</style>
+</head>
+<body>
+
+<nav class="toc">
+  <div class="brand">Library Access</div>
+  <div class="sub">Hướng dẫn source code Flutter client</div>
+
+  <div class="group">Bắt đầu</div>
+  <a href="#tong-quan">1. Tổng quan</a>
+  <a href="#kien-truc">2. Kiến trúc</a>
+  <a href="#thu-vien">3. Thư viện sử dụng</a>
+  <a href="#cai-dat">4. Cài đặt &amp; chạy</a>
+  <a href="#luong">5. Các luồng chính</a>
+
+  <div class="group">Giải thích từng file</div>
+  <a href="#f-root">Gốc &amp; cấu hình</a>
+  <a href="#f-app">app/</a>
+  <a class="file" href="#main">main.dart</a>
+  <a class="file" href="#app">app.dart</a>
+  <a class="file" href="#routes">routes.dart</a>
+  <a class="file" href="#router">router.dart</a>
+  <a class="file" href="#staff_nav">shell/staff_nav.dart</a>
+  <a class="file" href="#staff_shell">shell/staff_shell.dart</a>
+  <a href="#f-core">core/</a>
+  <a class="file" href="#theme">theme/*</a>
+  <a class="file" href="#env">config/env.dart</a>
+  <a class="file" href="#api_error">network/api_error.dart</a>
+  <a class="file" href="#api_client">network/api_client.dart</a>
+  <a class="file" href="#auth_interceptor">network/auth_interceptor.dart</a>
+  <a class="file" href="#paged">network/paged.dart</a>
+  <a class="file" href="#token_storage">storage/token_storage.dart</a>
+  <a class="file" href="#realtime">realtime/realtime_client.dart</a>
+  <a class="file" href="#utils">utils/*</a>
+  <a href="#f-shared">shared/widgets/</a>
+  <a href="#f-auth">features/auth/</a>
+  <a href="#f-librarian">features/librarian/</a>
+  <a href="#f-dev">features/dev/</a>
+  <a href="#f-test">test/</a>
+
+  <div class="group">Sử dụng</div>
+  <a href="#cong-thuc">6. Thêm màn hình mới</a>
+  <a href="#dung-component">7. Dùng component &amp; theme</a>
+  <a href="#quy-uoc">8. Quy ước cho nhóm</a>
+  <a href="#loi">9. Lỗi thường gặp</a>
+
+  <div class="group">Yêu cầu 10</div>
+  <a href="#patterns">10. Design patterns</a>
+  <a class="file" href="#p-summary">Bảng tổng hợp</a>
+  <a class="file" href="#p-creational">Nhóm khởi tạo</a>
+  <a class="file" href="#p-structural">Nhóm cấu trúc</a>
+  <a class="file" href="#p-behavioral">Nhóm hành vi</a>
+  <a class="file" href="#p-architectural">Kiến trúc &amp; ứng dụng</a>
+  <a class="file" href="#p-not-used">Chưa áp dụng &amp; lý do</a>
+</nav>
+
+<main>
+
+<div class="eyebrow">Library Access · PRM393 · Phụ trách P1, P2, P5</div>
+<h1>Hướng dẫn source code Flutter client</h1>
+<p class="lead">Tài liệu này giải thích từng file trong <code>LibIOG6/client</code>: file làm gì, vì sao viết như vậy, dùng thư viện nào, và cách bạn (cùng các thành viên khác) dùng lại source code này để code tiếp các màn hình.</p>
+
+<!-- ============================================================ -->
+<h2 id="tong-quan">1. Tổng quan</h2>
+
+<p>Client là <b>một codebase Flutter duy nhất</b> chạy cho cả 4 trải nghiệm của hệ thống: app sinh viên (mobile), web thủ thư, web quản trị viên và kiosk. Phần đã code hiện tại là nền móng mà cả nhóm dùng chung, cộng với phần của bạn:</p>
+
+<table>
+  <tr><th style="width:110px">Phần</th><th>Nội dung</th><th style="width:220px">Trạng thái</th></tr>
+  <tr><td><span class="tag p1">P1</span></td><td>Design system: màu, font, khoảng cách, theme, component chuẩn (nút, ô nhập, badge, alert, dialog, trạng thái trống/lỗi)</td><td><span class="tag real">Đã code thật</span></td></tr>
+  <tr><td><span class="tag p2">P2</span></td><td>Đăng nhập, bắt buộc đổi mật khẩu lần đầu, đổi mật khẩu, hồ sơ nhân viên, hết phiên / không có quyền, đăng xuất; khôi phục phiên và tự refresh token</td><td><span class="tag real">Đã code thật</span></td></tr>
+  <tr><td><span class="tag p5">P5</span></td><td>8 màn thủ thư LIB-01 → LIB-08, sidebar thủ thư</td><td><span class="tag stub">Có route + placeholder</span> Sidebar đã chạy thật</td></tr>
+  <tr><td><span class="tag core">Khác</span></td><td>Route chờ sẵn cho Admin, Sinh viên, Kiosk (của các bạn khác)</td><td><span class="tag stub">Placeholder</span></td></tr>
+</table>
+
+<div class="callout info">
+  <strong>Trạng thái kiểm tra</strong>
+  <code>flutter analyze</code> không có lỗi; <code>flutter test</code> chạy 13/13 test pass; bản web khởi động vào đúng màn đăng nhập.
+</div>
+
+<h3>Cây thư mục</h3>
+<pre><code>client/
+├── pubspec.yaml                 <span class="c"># khai báo thư viện + font</span>
+├── assets/fonts/                <span class="c"># Be Vietnam Pro 400/500/600/700 + OFL.txt</span>
+├── lib/
+│   ├── main.dart                <span class="c"># điểm khởi chạy</span>
+│   ├── app/                     <span class="c"># lắp ráp: app, router, shell</span>
+│   │   ├── app.dart
+│   │   ├── routes.dart
+│   │   ├── router.dart
+│   │   └── shell/ (staff_nav.dart, staff_shell.dart)
+│   ├── core/                    <span class="c"># hạ tầng kỹ thuật, không có nghiệp vụ</span>
+│   │   ├── config/env.dart
+│   │   ├── network/ (api_client, api_error, auth_interceptor, paged)
+│   │   ├── realtime/realtime_client.dart
+│   │   ├── storage/token_storage.dart
+│   │   ├── theme/ (app_colors, app_spacing, app_typography, app_theme)
+│   │   └── utils/ (formatters, idempotency)
+│   ├── shared/widgets/          <span class="c"># component UI dùng chung (P1)</span>
+│   └── features/                <span class="c"># từng tính năng nghiệp vụ</span>
+│       ├── auth/                <span class="c"># P2: data / application / presentation</span>
+│       ├── librarian/           <span class="c"># P5: 7 thư mục con, mỗi màn một thư mục</span>
+│       └── dev/                 <span class="c"># màn Component Gallery</span>
+└── test/
+    ├── widget_test.dart
+    └── features/auth/
+        ├── password_policy_test.dart
+        └── session_controller_test.dart</code></pre>
+
+<!-- ============================================================ -->
+<h2 id="kien-truc">2. Kiến trúc: Feature-first + phân lớp</h2>
+
+<p>Kiến trúc là <b>feature-first layered architecture</b>, bản rút gọn của Clean Architecture thường dùng với Riverpod. Code được chia theo hai trục.</p>
+
+<h3>Trục 1: chia theo phạm vi (thư mục cấp 1 trong <code>lib/</code>)</h3>
+<div class="layers">
+  <div class="layer l1"><div class="name">app/</div><div class="desc">Lắp ráp mọi thứ: MaterialApp, theme, router, shell. Là nơi duy nhất "biết" tất cả các feature.</div></div>
+  <div class="arrow">↓ dùng</div>
+  <div class="layer l2"><div class="name">features/</div><div class="desc">Từng tính năng nghiệp vụ (auth, librarian, student, admin, kiosk). Mỗi người trong nhóm làm thư mục của mình.</div></div>
+  <div class="arrow">↓ dùng</div>
+  <div class="layer l3"><div class="name">shared/widgets/</div><div class="desc">Component giao diện dùng chung, không biết nghiệp vụ.</div></div>
+  <div class="arrow">↓ dùng</div>
+  <div class="layer l4"><div class="name">core/</div><div class="desc">Hạ tầng: HTTP, token, lỗi, theme, WebSocket, định dạng ngày giờ.</div></div>
+</div>
+<p>Quy tắc: lớp dưới không import lớp trên. Nhờ vậy 5 người làm 5 feature khác nhau mà ít khi đụng file của nhau. <i>Ngoại lệ có chủ đích:</i> <code>core/network/api_client.dart</code> gọi <code>features/auth</code> để refresh phiên (xem giải thích ở file đó).</p>
+
+<h3>Trục 2: ba lớp bên trong mỗi feature</h3>
+<div class="grid">
+  <div class="card"><h4>data/</h4><p>Gọi API bằng Dio, chuyển JSON ↔ model Dart, đổi lỗi thành <code>ApiException</code>. Không biết màn hình nào gọi nó.</p></div>
+  <div class="card"><h4>application/</h4><p>Giữ <b>state</b> và quyết định nghiệp vụ (Riverpod <code>Notifier</code>). Không import widget → dễ test.</p></div>
+  <div class="card"><h4>presentation/</h4><p>Màn hình và widget. Chỉ <code>watch</code> state và gọi hành động xuống <code>application/</code>; không gọi Dio trực tiếp.</p></div>
+</div>
+<div class="callout warn">
+  <strong>Vì sao không có lớp domain/?</strong>
+  Clean Architecture đầy đủ có thêm <code>domain/</code> (entity, use case, repository interface). Với đồ án cỡ này, lớp đó chủ yếu sinh thêm file mà không thêm giá trị. Khi một feature có logic phức tạp, có thể thêm sau mà không phải sửa cấu trúc.
+</div>
+
+<!-- ============================================================ -->
+<h2 id="thu-vien">3. Thư viện sử dụng</h2>
+
+<table>
+  <tr><th style="width:190px">Thư viện</th><th>Dùng để làm gì</th><th>Vì sao chọn</th><th style="width:150px">Dùng ở</th></tr>
+  <tr><td><code>flutter_riverpod</code> ^2.5</td><td>Quản lý state và truyền phụ thuộc (dependency injection)</td><td>Có sẵn trong pubspec của nhóm. Provider vừa giữ state vừa thay cho DI; test có thể "override" provider để giả dữ liệu mà không cần sửa code.</td><td>Mọi nơi</td></tr>
+  <tr><td><code>go_router</code> ^14</td><td>Điều hướng, URL</td><td>Có <code>redirect</code> để chặn route theo phiên đăng nhập và role ở một chỗ; URL đẹp trên web (<code>/staff/history</code>); hỗ trợ <code>ShellRoute</code> cho sidebar cố định.</td><td><code>app/router.dart</code></td></tr>
+  <tr><td><code>dio</code> ^5</td><td>Gọi HTTP</td><td>Có <b>interceptor</b> để gắn token và tự refresh; xử lý timeout, lỗi mạng rõ ràng hơn <code>http</code>.</td><td><code>core/network</code></td></tr>
+  <tr><td><code>flutter_secure_storage</code> ^9</td><td>Lưu refresh token</td><td>Mã hóa bằng Keychain (iOS) / Keystore (Android); token không nằm dạng chữ thường trong bộ nhớ máy.</td><td><code>core/storage</code></td></tr>
+  <tr><td><code>stomp_dart_client</code> ^3</td><td>Nhận dữ liệu realtime</td><td>Backend Spring dùng giao thức <b>STOMP</b> qua <code>/ws</code> (topic <code>/topic/occupancy</code>). <code>web_socket_channel</code> chỉ là WebSocket thô, không hiểu STOMP.</td><td><code>core/realtime</code></td></tr>
+  <tr><td><code>intl</code> ^0.20.2</td><td>Định dạng ngày giờ</td><td>Spec yêu cầu DD/MM/YYYY và HH:mm. Phiên bản bị khóa ở 0.20.2 vì <code>flutter_localizations</code> yêu cầu đúng bản này.</td><td><code>core/utils/formatters.dart</code></td></tr>
+  <tr><td><code>flutter_localizations</code> (SDK)</td><td>Bản dịch tiếng Việt cho widget Material</td><td>Bộ chọn ngày, nút "Hủy/OK" mặc định, tooltip… hiện tiếng Việt. Cần cho bộ lọc ngày ở LIB-06.</td><td><code>app/app.dart</code></td></tr>
+  <tr><td><code>uuid</code> ^4</td><td>Tạo idempotency key</td><td>Mỗi thao tác "Ghi nhận vào/ra" cần một key duy nhất để không bị ghi trùng khi mạng rớt.</td><td><code>core/utils/idempotency.dart</code></td></tr>
+  <tr><td><code>mobile_scanner</code> ^5</td><td>Quét mã QR bằng camera</td><td>Có sẵn cho phần Kiosk (P10–P11). Phần của bạn chưa dùng.</td><td>(Kiosk)</td></tr>
+  <tr><td><code>web_socket_channel</code> ^3</td><td>WebSocket thô</td><td>Có sẵn từ trước; hiện không dùng trực tiếp (STOMP client tự lo WebSocket).</td><td>—</td></tr>
+  <tr><td>Font <b>Be Vietnam Pro</b></td><td>Font chữ toàn app</td><td>Spec bắt buộc; hỗ trợ đầy đủ dấu tiếng Việt. Đóng gói vào <code>assets/fonts</code> thay vì tải từ mạng để kiosk không có Internet vẫn hiện đúng chữ.</td><td><code>pubspec.yaml</code></td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="cai-dat">4. Cài đặt &amp; chạy</h2>
+
+<ol class="steps">
+  <li>
+    <b>Yêu cầu</b>: Flutter SDK ≥ 3.24 (máy hiện có 3.44), Chrome để chạy web. Kiểm tra bằng:
+    <pre><code>flutter --version
+flutter doctor</code></pre>
+  </li>
+  <li>
+    <b>Chạy backend</b> (để đăng nhập được). Cách nhanh nhất theo <code>README.md</code> của dự án: chạy PostgreSQL bằng Docker, rồi chạy Spring Boot với profile <code>dev</code> (tự tạo tài khoản mẫu).
+    <pre><code>docker compose -f compose.dev.yml up -d postgres
+cd backend
+./mvnw spring-boot:run          <span class="c"># Windows: mvnw.cmd spring-boot:run</span></code></pre>
+  </li>
+  <li>
+    <b>Tải thư viện cho client</b>:
+    <pre><code>cd client
+flutter pub get</code></pre>
+  </li>
+  <li>
+    <b>Chạy app</b>. Địa chỉ backend truyền qua <code>--dart-define=API_BASE_URL</code> (mặc định <code>http://localhost:8080</code>):
+    <pre><code><span class="c"># Web (thủ thư/admin dùng chủ yếu trên web)</span>
+flutter run -d chrome --dart-define=API_BASE_URL=http://localhost:8080
+
+<span class="c"># Android emulator: 10.0.2.2 trỏ về localhost của máy tính</span>
+flutter run -d emulator-5554 --dart-define=API_BASE_URL=http://10.0.2.2:8080
+
+<span class="c"># Điện thoại thật cùng mạng LAN</span>
+flutter run -d &lt;device_id&gt; --dart-define=API_BASE_URL=http://192.168.1.10:8080</code></pre>
+    <div class="callout warn"><strong>Lưu ý khi chạy web</strong>Backend hiện đang tắt CORS, nên bản web gọi API sẽ bị trình duyệt chặn. Xem cách xử lý ở <a href="#loi">mục 9</a>.</div>
+  </li>
+  <li>
+    <b>Đăng nhập thử</b> bằng tài khoản mẫu (mật khẩu mặc định <code>dev_secret_password_123</code>, theo <code>README.md</code>):
+    <table>
+      <tr><th>Mã tài khoản</th><th>Vai trò</th><th>Sau khi đăng nhập sẽ thấy</th></tr>
+      <tr><td><code>LIB001</code></td><td>Thủ thư</td><td>Sidebar thủ thư 7 mục, màn LIB-01 (placeholder)</td></tr>
+      <tr><td><code>AD001</code></td><td>Quản trị viên</td><td>Sidebar admin 10 mục, màn ADM-01 (placeholder)</td></tr>
+      <tr><td><code>SV001</code></td><td>Sinh viên</td><td>Placeholder STU-01</td></tr>
+    </table>
+    Nếu tài khoản có <code>mustChangePassword = true</code>, app sẽ giữ bạn ở màn "Đổi mật khẩu lần đầu" trước.
+  </li>
+  <li>
+    <b>Xem component</b>: mở <code>http://localhost:&lt;port&gt;/#/dev/components</code> (chỉ có ở chế độ debug) để so sánh với Figma P1. Không cần đăng nhập.
+  </li>
+  <li>
+    <b>Kiểm tra code</b> trước khi commit:
+    <pre><code>flutter analyze
+flutter test</code></pre>
+  </li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="luong">5. Các luồng chính</h2>
+
+<h3>5.1 Khởi động app</h3>
+<div class="flow">
+  <span class="step">main.dart</span><span class="to">→</span>
+  <span class="step">SessionController.build() = SessionRestoring</span><span class="to">→</span>
+  <span class="step">Router đưa về /splash</span><span class="to">→</span>
+  <span class="step">đọc refresh token đã lưu</span><span class="to">→</span>
+  <span class="step">có token hợp lệ? → Authenticated : SignedOut</span><span class="to">→</span>
+  <span class="step">Router tự chuyển trang</span>
+</div>
+
+<h3>5.2 Đăng nhập</h3>
+<div class="flow">
+  <span class="step">LoginScreen bấm "Đăng nhập"</span><span class="to">→</span>
+  <span class="step">SessionController.login()</span><span class="to">→</span>
+  <span class="step">AuthApi POST /auth/login</span><span class="to">→</span>
+  <span class="step">lưu token, state = Authenticated(user)</span><span class="to">→</span>
+  <span class="step">Router redirect</span>
+</div>
+<p><b>Điểm quan trọng:</b> màn đăng nhập <i>không tự chuyển trang</i>. Nó chỉ đổi state; router thấy state đổi (qua <code>refreshListenable</code>) và tự quyết định đi đâu. Mọi luật điều hướng nằm một chỗ:</p>
+<table>
+  <tr><th>Trạng thái phiên</th><th>Kết quả</th></tr>
+  <tr><td>Đang khôi phục</td><td>Ở <code>/splash</code></td></tr>
+  <tr><td>Chưa đăng nhập</td><td><code>/login</code>, hoặc <code>/session-expired</code> nếu phiên bị hết hạn ngoài ý muốn. Trang public (<code>/login</code>, <code>/kiosk</code>, <code>/dev/...</code>) vẫn vào được.</td></tr>
+  <tr><td>Đã đăng nhập, <code>mustChangePassword</code></td><td>Bị giữ ở <code>/first-password-change</code>, không có lối tắt</td></tr>
+  <tr><td>Đã đăng nhập, đang ở trang vào (<code>/</code>, <code>/login</code>, …)</td><td>Về trang chủ theo role: sinh viên <code>/student/home</code>, thủ thư <code>/librarian/overview</code>, admin <code>/admin/overview</code></td></tr>
+  <tr><td>Vào khu vực không đúng role</td><td><code>/forbidden</code></td></tr>
+  <tr><td>URL không tồn tại</td><td>Màn "Không tìm thấy trang"</td></tr>
+</table>
+
+<h3>5.3 Token hết hạn giữa chừng</h3>
+<div class="flow">
+  <span class="step">Request bất kỳ → 401</span><span class="to">→</span>
+  <span class="step">AuthInterceptor gọi refresh() một lần</span><span class="to">→</span>
+  <span class="step">thành công: gửi lại request với token mới</span>
+  <span class="to">|</span>
+  <span class="step">thất bại: expire() → màn "Phiên đã hết hạn"</span>
+</div>
+<p>Access token sống 15 phút, refresh token 7 ngày (theo OpenAPI). Người dùng không phải đăng nhập lại mỗi 15 phút.</p>
+
+<!-- ============================================================ -->
+<h2 id="f-root">Giải thích từng file · Gốc &amp; cấu hình</h2>
+
+<div class="card file-card" id="pubspec">
+  <header><span class="path">pubspec.yaml</span><span class="tag core">cấu hình</span></header>
+  <p>Khai báo thư viện (mục 3) và font. Phần font khai báo 4 độ đậm để <code>FontWeight.w400…w700</code> map đúng file:</p>
+<pre><code><span class="k">fonts</span>:
+  - <span class="k">family</span>: <span class="s">BeVietnamPro</span>
+    <span class="k">fonts</span>:
+      - <span class="k">asset</span>: <span class="s">assets/fonts/BeVietnamPro-Regular.ttf</span>
+        <span class="k">weight</span>: 400
+      <span class="c"># Medium 500, SemiBold 600, Bold 700</span></code></pre>
+  <div class="why"><b>Vì sao:</b> Nếu chỉ khai báo một file, Flutter sẽ "giả" chữ đậm bằng cách làm dày nét, chữ có dấu dễ bị xấu hoặc dính nhau.</div>
+</div>
+
+<div class="card file-card" id="fonts">
+  <header><span class="path">assets/fonts/</span><span class="tag core">tài nguyên</span></header>
+  <p>4 file <code>.ttf</code> của Be Vietnam Pro tải từ kho Google Fonts, kèm <code>OFL.txt</code> (giấy phép SIL Open Font License, cho phép dùng và phân phối miễn phí, cần giữ file giấy phép).</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-app">Giải thích từng file · app/</h2>
+
+<div class="card file-card" id="main">
+  <header><span class="path">lib/main.dart</span><span class="tag real">thật</span><span class="tag core">khởi chạy</span></header>
+<pre><code><span class="t">Future</span>&lt;<span class="k">void</span>&gt; main() <span class="k">async</span> {
+  <span class="t">WidgetsFlutterBinding</span>.ensureInitialized();
+  <span class="k">await</span> initializeDateFormatting(<span class="s">'vi_VN'</span>);
+  runApp(<span class="k">const</span> <span class="t">ProviderScope</span>(child: <span class="t">LibraryAccessApp</span>()));
+}</code></pre>
+  <ul>
+    <li><code>initializeDateFormatting('vi_VN')</code>: nạp dữ liệu tên thứ/tháng tiếng Việt cho <code>intl</code>.</li>
+    <li><code>ProviderScope</code>: "kho" chứa mọi provider Riverpod. Bắt buộc bọc ngoài cùng.</li>
+  </ul>
+  <div class="why"><b>Vì sao gọn:</b> <code>main.dart</code> chỉ khởi động; mọi cấu hình nằm ở <code>app/</code> để test có thể dựng <code>LibraryAccessApp</code> với provider giả.</div>
+</div>
+
+<div class="card file-card" id="app">
+  <header><span class="path">lib/app/app.dart</span><span class="tag real">thật</span></header>
+  <p><code>LibraryAccessApp</code> tạo <code>MaterialApp.router</code> với:</p>
+  <ul>
+    <li><code>theme: AppTheme.light()</code> (từ <code>core/theme</code>).</li>
+    <li><code>locale</code> + <code>supportedLocales</code> + <code>GlobalMaterialLocalizations.delegates</code>: widget Material mặc định nói tiếng Việt.</li>
+    <li><code>routerConfig: ref.watch(routerProvider)</code>: lấy router từ Riverpod (router cần đọc trạng thái phiên).</li>
+  </ul>
+</div>
+
+<div class="card file-card" id="routes">
+  <header><span class="path">lib/app/routes.dart</span><span class="tag real">thật</span></header>
+  <p>Hằng số cho <b>mọi đường dẫn</b> trong app, cộng hai hàm tiện ích:</p>
+  <ul>
+    <li><code>Routes.homeFor(role)</code>: trang chủ theo vai trò.</li>
+    <li><code>Routes.isPublic(path)</code>: trang không cần đăng nhập (login, session-expired, kiosk, dev).</li>
+  </ul>
+  <p>Cách nhóm đường dẫn:</p>
+  <table>
+    <tr><th>Tiền tố</th><th>Ai vào được</th><th>Ví dụ</th></tr>
+    <tr><td><code>/librarian/</code></td><td>Chỉ thủ thư</td><td>overview (LIB-01), shifts (LIB-07), rules (LIB-08)</td></tr>
+    <tr><td><code>/staff/</code></td><td>Thủ thư + admin</td><td>occupants, manual-access, visitors, history, profile, change-password</td></tr>
+    <tr><td><code>/admin/</code></td><td>Chỉ admin</td><td>overview, accounts, kiosks, shifts, analytics, config</td></tr>
+    <tr><td><code>/student/</code></td><td>Chỉ sinh viên</td><td>home</td></tr>
+    <tr><td><code>/kiosk</code></td><td>Public (kiosk xác thực bằng thiết bị)</td><td>—</td></tr>
+  </table>
+  <div class="why"><b>Vì sao:</b> spec nói admin dùng lại các màn vận hành của thủ thư. Đặt chúng dưới <code>/staff/</code> nên chỉ code một lần cho cả hai role. Gom đường dẫn vào một file giúp tránh gõ sai chuỗi ở nhiều nơi.</div>
+</div>
+
+<div class="card file-card" id="router">
+  <header><span class="path">lib/app/router.dart</span><span class="tag real">thật</span><span class="tag p2">P2</span></header>
+  <p>Trái tim của điều hướng. Gồm ba phần:</p>
+  <h4>a) <code>routerProvider</code>: tạo GoRouter</h4>
+<pre><code><span class="k">final</span> refresh = <span class="t">ValueNotifier</span>&lt;<span class="t">SessionState</span>&gt;(ref.read(sessionControllerProvider));
+ref.listen(sessionControllerProvider, (_, next) =&gt; refresh.value = next);
+
+<span class="k">return</span> <span class="t">GoRouter</span>(
+  initialLocation: <span class="t">Routes</span>.splash,
+  refreshListenable: refresh,   <span class="c">// phiên đổi → chạy lại redirect</span>
+  redirect: (context, state) =&gt; _redirect(ref.read(sessionControllerProvider), state.uri.path),
+  ...
+);</code></pre>
+  <p><code>ValueNotifier</code> là cầu nối: GoRouter chỉ nghe được <code>Listenable</code>, còn trạng thái phiên nằm trong Riverpod.</p>
+  <h4>b) Danh sách route</h4>
+  <ul>
+    <li>Route ngoài shell: splash, login, first-password-change, session-expired, forbidden, dev/components (chỉ khi <code>kDebugMode</code>).</li>
+    <li><code>ShellRoute</code> bọc mọi màn thủ thư/admin trong <code>StaffShell</code> (sidebar + thanh trên). Khi chuyển trang chỉ phần nội dung thay đổi, sidebar giữ nguyên.</li>
+    <li><code>/staff/visitors/:visitorId</code> lấy tham số từ URL cho LIB-05.</li>
+    <li>Route admin dùng <code>_placeholder(...)</code>, bạn làm P6–P9 chỉ cần thay bằng màn thật.</li>
+  </ul>
+  <h4>c) <code>_redirect</code> và <code>_canAccess</code></h4>
+  <p>Hàm thuần (không phụ thuộc widget) chứa luật ở mục 5.2. Dùng <code>switch</code> trên <code>sealed class SessionState</code>: trình biên dịch bắt buộc xử lý đủ cả 3 trạng thái, quên một trường hợp là báo lỗi ngay.</p>
+  <div class="why"><b>Vì sao đặt quyền ở router:</b> màn hình không cần tự kiểm tra role; người dùng gõ thẳng URL <code>/admin/accounts</code> cũng bị chặn. (Backend vẫn kiểm tra quyền lần nữa, client chỉ để trải nghiệm tốt hơn.)</div>
+</div>
+
+<div class="card file-card" id="staff_nav">
+  <header><span class="path">lib/app/shell/staff_nav.dart</span><span class="tag real">thật</span><span class="tag p5">P5</span></header>
+  <p><code>staffNavFor(role)</code> trả về danh sách mục sidebar đúng thứ tự spec (DESIGN_SYSTEM.md mục 4): thủ thư 7 mục, admin 10 mục. 4 mục vận hành dùng chung được khai báo một lần trong <code>shared</code>.</p>
+  <div class="why"><b>Vì sao tách khỏi shell:</b> thêm/bớt mục menu chỉ sửa dữ liệu, không đụng code giao diện.</div>
+</div>
+
+<div class="card file-card" id="staff_shell">
+  <header><span class="path">lib/app/shell/staff_shell.dart</span><span class="tag real">thật</span><span class="tag p5">P5</span></header>
+  <p>Khung desktop cho thủ thư và admin:</p>
+  <ul>
+    <li><b>_Sidebar</b>: nền navy, logo + phụ đề, danh sách <code>_NavTile</code>. Mục đang mở được tô sáng dựa trên URL hiện tại (<code>location.startsWith(item.route)</code>).</li>
+    <li><b>_TopBar</b>: avatar chữ cái đầu (spec cấm dùng ảnh khuôn mặt làm avatar), tên, vai trò, menu "Hồ sơ tài khoản / Đổi mật khẩu / Đăng xuất".</li>
+    <li><b>Responsive</b>: <code>LayoutBuilder</code>; rộng ≥ 1024px thì sidebar cố định, hẹp hơn (tablet 768px) thì sidebar chuyển vào <code>Drawer</code> và hiện nút menu.</li>
+  </ul>
+  <div class="why"><b>Vì sao đặt ở app/ chứ không ở shared/:</b> shell cần biết phiên đăng nhập, danh sách route và hộp thoại đăng xuất, tức là biết nghiệp vụ. <code>shared/</code> phải giữ "sạch" nghiệp vụ.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-core">Giải thích từng file · core/</h2>
+
+<div class="card file-card" id="theme">
+  <header><span class="path">lib/core/theme/</span><span class="tag real">thật</span><span class="tag p1">P1</span></header>
+  <h4>app_colors.dart</h4>
+  <p>10 màu chính lấy đúng từ Figma "01 Màu sắc" (<code>navy #173B63</code>, <code>action #2563EB</code>, <code>background #F5F7FA</code>, …) và 5 màu nền nhạt cho badge/alert (<code>successSurface</code>, <code>infoSurface</code>, …).</p>
+  <div class="callout warn" style="margin-top:8px"><strong>Cần đối chiếu</strong>5 màu nền nhạt chưa có trong Figma dưới dạng token, mình chọn theo ảnh chụp. Nên kiểm tra lại bằng công cụ chọn màu trong Figma.</div>
+  <h4>app_spacing.dart</h4>
+  <ul>
+    <li><code>AppSpacing</code>: lưới 8 điểm (4, 8, 16, 24, 32, 48).</li>
+    <li><code>AppRadius</code>: bo góc ô nhập/nút 8, thẻ 12 (theo ghi chú Figma).</li>
+    <li><code>AppSizes</code>: chiều cao nút desktop 40 / mobile 48 / kiosk 64, chiều rộng sidebar, mốc responsive 1024.</li>
+  </ul>
+  <h4>app_typography.dart</h4>
+  <p>Thang chữ đúng Figma "02 Kiểu chữ": Display 56 Bold, H1 30, H2 24, H3 18 SemiBold, Body L 16, Body M 14 Regular, thêm <code>label</code> và <code>caption</code>. Mọi style có <code>height</code> 1.25–1.5.</p>
+  <div class="why"><b>Vì sao đặt line-height:</b> chữ tiếng Việt có dấu cả trên ("Ằ", "Ỗ") lẫn dưới ("ặ"); line-height thấp sẽ cắt mất dấu. Spec yêu cầu khoảng 1.5 cho body.</div>
+  <h4>app_theme.dart</h4>
+  <p><code>AppTheme.light()</code> gom tất cả vào <code>ThemeData</code>: <code>ColorScheme</code>, font, nền trang, <code>CardThemeData</code> (viền mỏng, không bóng), <code>InputDecorationTheme</code> (viền focus xanh 2px, viền lỗi đỏ), dialog bo 12, snackbar nổi.</p>
+  <div class="why"><b>Vì sao:</b> widget Material có sẵn (<code>Card</code>, <code>TextFormField</code>, <code>AlertDialog</code>…) tự động đúng design system, không cần truyền style ở từng chỗ.</div>
+</div>
+
+<div class="card file-card" id="env">
+  <header><span class="path">lib/core/config/env.dart</span><span class="tag real">thật</span></header>
+  <p><code>Env.apiBaseUrl</code> đọc từ <code>--dart-define=API_BASE_URL</code> (mặc định <code>http://localhost:8080</code>). <code>Env.wsUrl</code> tự đổi <code>http→ws</code> / <code>https→wss</code> và gắn đường dẫn <code>/ws</code>.</p>
+  <div class="why"><b>Vì sao dart-define:</b> giá trị được "đóng" vào lúc build, không cần file <code>.env</code> chạy kèm app; mỗi môi trường (emulator, máy thật, server) chỉ đổi tham số lệnh chạy.</div>
+</div>
+
+<div class="card file-card" id="api_error">
+  <header><span class="path">lib/core/network/api_error.dart</span><span class="tag real">thật</span></header>
+  <p>Chuẩn hóa <b>mọi lỗi</b> thành <code>ApiException</code>, khớp schema <code>ApiError</code> của backend (<code>code</code>, <code>message</code>, <code>fieldErrors</code>, <code>traceId</code>).</p>
+  <ul>
+    <li><code>ApiException.fromDio(e)</code>: lỗi timeout thành <code>TIMEOUT</code>, mất mạng thành <code>NETWORK_UNAVAILABLE</code>; có body JSON thì đọc mã lỗi backend.</li>
+    <li><code>userMessage</code>: bảng ánh xạ mã lỗi thành câu tiếng Việt (ví dụ <code>ACCOUNT_LOCKED</code> → "Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.").</li>
+    <li><code>isOutcomeUncertain</code>: <code>true</code> khi request <i>có thể</i> đã tới server nhưng không nhận được phản hồi. Dùng cho LIB-03 và đổi mật khẩu để không gửi lại mù quáng.</li>
+  </ul>
+  <div class="why"><b>Vì sao:</b> spec yêu cầu không hiện mã lỗi kỹ thuật cho người dùng. Màn hình chỉ cần <code>Text(e.userMessage)</code>. Thêm mã lỗi mới chỉ sửa một bảng.</div>
+</div>
+
+<div class="card file-card" id="api_client">
+  <header><span class="path">lib/core/network/api_client.dart</span><span class="tag real">thật</span></header>
+  <p><code>dioProvider</code> tạo một <code>Dio</code> dùng chung: base URL, timeout (kết nối 10s, nhận 20s), JSON, và gắn <code>AuthInterceptor</code>. <code>publicRequest</code> là <code>Options</code> đánh dấu request không gắn token (login, refresh).</p>
+  <div class="why"><b>Ngoại lệ phụ thuộc:</b> file này đọc <code>sessionControllerProvider</code> (thuộc <code>features/auth</code>) để interceptor gọi <code>refresh()</code> và <code>expire()</code>. Hai bên được nối bằng callback và chỉ đọc khi thật sự cần (lazy), nên không bị vòng lặp khởi tạo. Nếu muốn tách tầng chặt hơn, có thể chuyển phần nối này lên <code>app/</code>.</div>
+</div>
+
+<div class="card file-card" id="auth_interceptor">
+  <header><span class="path">lib/core/network/auth_interceptor.dart</span><span class="tag real">thật</span><span class="tag p2">P2</span></header>
+  <ul>
+    <li><code>onRequest</code>: gắn <code>Authorization: Bearer &lt;accessToken&gt;</code> (trừ request public).</li>
+    <li><code>onError</code>: gặp 401 thì gọi <code>refreshSession()</code> <b>một lần</b>, rồi gửi lại request gốc với token mới (đánh dấu <code>authRetried</code> để không lặp vô hạn). Refresh thất bại thì gọi <code>onSessionExpired()</code>.</li>
+    <li>Kế thừa <code>QueuedInterceptor</code>: nếu 3 request cùng nhận 401 cùng lúc, chúng được xếp hàng. Request đầu refresh, các request sau thấy token đã đổi (<code>alreadyRefreshed</code>) thì chỉ gửi lại, không refresh thêm.</li>
+  </ul>
+  <div class="why"><b>Vì sao quan trọng:</b> backend xoay vòng refresh token (mỗi lần refresh trả về token mới, token cũ hết hiệu lực). Refresh song song nhiều lần sẽ khiến token bị thu hồi và người dùng bị đá ra.</div>
+</div>
+
+<div class="card file-card" id="paged">
+  <header><span class="path">lib/core/network/paged.dart</span><span class="tag real">thật</span></header>
+  <p><code>Paged&lt;T&gt;</code> là model chung cho mọi API phân trang của backend (<code>items, page, size, totalElements, totalPages</code>). Có <code>hasNext</code> và <code>isEmpty</code>.</p>
+<pre><code><span class="k">final</span> page = <span class="t">Paged</span>.fromJson(json, <span class="t">Visitor</span>.fromJson);</code></pre>
+  <div class="why"><b>Vì sao:</b> LIB-02, LIB-04, LIB-06 và nhiều màn admin đều phân trang; viết một lần, dùng mọi nơi.</div>
+</div>
+
+<div class="card file-card" id="token_storage">
+  <header><span class="path">lib/core/storage/token_storage.dart</span><span class="tag real">thật</span></header>
+  <ul>
+    <li><b>Access token</b> chỉ giữ trong bộ nhớ (biến <code>accessToken</code>), mất khi tắt app.</li>
+    <li><b>Refresh token</b> lưu bằng <code>flutter_secure_storage</code> để mở lại app vẫn còn phiên.</li>
+    <li><code>readRefreshToken()</code> bắt mọi lỗi và trả <code>null</code>: kho bảo mật hỏng (ví dụ Android reset Keystore) được coi như chưa đăng nhập thay vì làm treo app.</li>
+  </ul>
+  <div class="why"><b>Vì sao tách hai loại:</b> access token dùng thường xuyên nhưng sống ngắn; giữ trong RAM giảm rủi ro lộ. Refresh token sống lâu nên phải lưu nơi được mã hóa.</div>
+</div>
+
+<div class="card file-card" id="realtime">
+  <header><span class="path">lib/core/realtime/realtime_client.dart</span><span class="tag real">khung</span><span class="tag p5">LIB-01</span></header>
+  <p>Client STOMP kết nối <code>/ws</code> với header <code>Authorization</code> (backend chỉ cho thủ thư/admin). Có:</p>
+  <ul>
+    <li><code>status</code>: <code>ValueNotifier</code> với 3 trạng thái <i>disconnected / connecting / connected</i>, dùng cho chỉ báo "Mất kết nối" ở LIB-01.</li>
+    <li><code>subscribeJson(destination, onMessage)</code>: đăng ký topic, tự giải mã JSON, trả về hàm hủy đăng ký.</li>
+    <li>Tự kết nối lại sau 5 giây khi rớt.</li>
+  </ul>
+  <div class="callout warn" style="margin-top:8px"><strong>Việc còn lại khi làm LIB-01</strong>Header token chỉ được đặt lúc kết nối. Sau khi access token được refresh, cần <code>disconnect()</code> rồi <code>connect()</code> lại để dùng token mới.</div>
+</div>
+
+<div class="card file-card" id="utils">
+  <header><span class="path">lib/core/utils/</span><span class="tag real">thật</span></header>
+  <h4>formatters.dart</h4>
+  <p><code>Fmt.date</code> → <code>16/10/2026</code>, <code>Fmt.time</code> → <code>14:05</code>, <code>Fmt.dateTime</code>, <code>Fmt.duration</code> → "2 giờ 15 phút". Mọi hàm đổi về <b>giờ Việt Nam (UTC+7)</b> trước khi định dạng, bất kể máy người dùng đặt múi giờ nào (spec yêu cầu).</p>
+  <h4>idempotency.dart</h4>
+  <p><code>newIdempotencyKey()</code> tạo UUID v4. Quy tắc: <b>một thao tác người dùng = một key</b>; khi thử lại hoặc kiểm tra kết quả bị mất, dùng lại đúng key cũ. Backend có <code>GET /access/requests/{idempotencyKey}</code> để hỏi kết quả.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-shared">Giải thích từng file · shared/widgets/ <span class="tag p1">P1</span></h2>
+
+<p>Đây là "sản phẩm bàn giao" chính của P1: các thành viên khác dùng những widget này thay vì tự viết style.</p>
+
+<div class="card file-card" id="app_button">
+  <header><span class="path">app_button.dart</span><span class="tag real">thật</span></header>
+  <p><code>AppButton</code> có 5 kiểu (<code>primary, secondary, ghost, destructive, link</code>) × 3 cỡ (<code>desktop 40, mobile 48, kiosk 64</code>), hỗ trợ icon, <code>expand</code> (rộng hết), và <code>loading</code>.</p>
+<pre><code><span class="t">AppButton</span>(
+  label: <span class="s">'Ghi nhận vào'</span>,
+  icon: <span class="t">Icons</span>.login,
+  loading: _submitting,   <span class="c">// hiện spinner + khóa nút</span>
+  onPressed: _submit,     <span class="c">// null = disabled</span>
+)</code></pre>
+  <div class="why"><b>Vì sao có <code>loading</code>:</b> khi đang gửi, nút tự khóa nên người dùng không bấm hai lần, tránh ghi nhận trùng (yêu cầu quan trọng của spec).</div>
+</div>
+
+<div class="card file-card" id="app_text_field">
+  <header><span class="path">app_text_field.dart</span><span class="tag real">thật</span></header>
+  <p>Ô nhập kiểu Figma "05": nhãn ở trên, gợi ý/lỗi ở dưới (tối đa 3 dòng, không cắt chữ dài). <code>obscure: true</code> biến thành ô mật khẩu có nút ẩn/hiện, đồng thời tắt gợi ý bàn phím và tự sửa chính tả.</p>
+  <p>Nhận <code>validator</code> như <code>TextFormField</code>, dùng được trong <code>Form</code>.</p>
+</div>
+
+<div class="card file-card" id="status_badge">
+  <header><span class="path">status_badge.dart</span><span class="tag real">thật</span></header>
+  <p>9 constructor có sẵn đúng Figma "04": <code>.active()</code> Đang hoạt động, <code>.inside()</code> Đang trong thư viện, <code>.outside()</code>, <code>.nearCapacity()</code> Gần đầy, <code>.locked()</code> Đã khóa, <code>.disconnected()</code> Mất kết nối, <code>.face()</code>, <code>.qr()</code>, <code>.manual()</code>. Hoặc tự tạo: <code>StatusBadge(label: 'Đã hủy', tone: BadgeTone.neutral)</code>.</p>
+  <div class="why"><b>Vì sao luôn có icon + chữ:</b> spec ghi rõ "không dựa vào màu sắc" (người mù màu vẫn phân biệt được).</div>
+</div>
+
+<div class="card file-card" id="app_alert">
+  <header><span class="path">app_alert.dart</span><span class="tag real">thật</span></header>
+  <p>Thông báo trong trang với 4 tông <code>info / success / warning / error</code>: icon, tiêu đề, nội dung, một nút hành động tùy chọn. Tông <code>error</code> được đánh dấu <code>liveRegion</code> để trình đọc màn hình tự đọc khi lỗi xuất hiện.</p>
+</div>
+
+<div class="card file-card" id="app_dialog">
+  <header><span class="path">app_dialog.dart</span><span class="tag real">thật</span></header>
+  <p><code>showConfirmDialog(...)</code> trả về <code>Future&lt;bool&gt;</code>. <code>destructive: true</code> cho nút đỏ, dùng cho xóa khuôn mặt, khóa tài khoản, thu hồi kiosk, hủy ca, gỡ phân công (spec liệt kê đúng 5 trường hợp này).</p>
+<pre><code><span class="k">final</span> ok = <span class="k">await</span> showConfirmDialog(context,
+  title: <span class="s">'Xác nhận hủy phân công'</span>,
+  message: <span class="s">'Nhân viên sẽ bị gỡ khỏi ca trực này.'</span>,
+  confirmLabel: <span class="s">'Hủy phân công'</span>,
+  destructive: <span class="k">true</span>);
+<span class="k">if</span> (ok) { ... }</code></pre>
+</div>
+
+<div class="card file-card" id="state_views">
+  <header><span class="path">state_views.dart</span><span class="tag real">thật</span></header>
+  <ul>
+    <li><code>EmptyState</code>: không có dữ liệu / không có kết quả tìm kiếm.</li>
+    <li><code>ErrorState(onRetry: ...)</code>: "Không tải được dữ liệu" + nút "Thử lại".</li>
+    <li><code>LoadingState</code>: vòng xoay giữa màn hình.</li>
+  </ul>
+  <div class="why"><b>Vì sao:</b> spec yêu cầu mọi màn danh sách có đủ trạng thái loading / rỗng / lỗi. Có sẵn widget thì không ai quên.</div>
+</div>
+
+<div class="card file-card" id="placeholder_page">
+  <header><span class="path">placeholder_page.dart</span><span class="tag stub">tạm thời</span></header>
+  <p>Hiện mã màn hình + tiêu đề + "Màn hình đang được phát triển". Dùng cho các route đã có nhưng chưa code. Xóa khi mọi màn đã xong.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-auth">Giải thích từng file · features/auth/ <span class="tag p2">P2</span></h2>
+
+<h3>data/</h3>
+
+<div class="card file-card" id="user">
+  <header><span class="path">data/models/user.dart</span><span class="tag real">thật</span></header>
+  <ul>
+    <li><code>enum UserRole</code>: <code>student / librarian / admin</code>, mỗi giá trị có <code>apiValue</code> (STUDENT…) và <code>label</code> tiếng Việt (Sinh viên, Thủ thư, Quản trị viên). <code>isStaff</code> = thủ thư hoặc admin.</li>
+    <li><code>class User</code>: khớp schema <code>User</code> của OpenAPI (id, code, email, fullName, role, status, mustChangePassword, faceEnrolled, version). <code>fromJson</code> viết tay.</li>
+    <li><code>initials</code>: "Nguyễn Thị Huyền" → "NH" cho avatar.</li>
+  </ul>
+  <div class="why"><b>Vì sao viết tay fromJson thay vì json_serializable/freezed:</b> không cần chạy <code>build_runner</code>, ít bước cho người mới. Khi số model nhiều lên, nhóm có thể chuyển sang sinh code.</div>
+</div>
+
+<div class="card file-card" id="token_pair">
+  <header><span class="path">data/models/token_pair.dart</span><span class="tag real">thật</span></header>
+  <p>Khớp schema <code>TokenPair</code>, được trả về bởi <b>login, refresh và đổi mật khẩu</b>: <code>accessToken</code>, <code>refreshToken</code>, <code>expiresIn</code> (đổi sang <code>Duration</code>), <code>user</code>.</p>
+</div>
+
+<div class="card file-card" id="auth_repository">
+  <header><span class="path">data/auth_repository.dart</span><span class="tag real">thật</span></header>
+  <p><code>abstract interface class AuthRepository</code> khai báo <b>hợp đồng</b> dữ liệu xác thực: <code>login</code>, <code>refresh</code>, <code>logout</code>, <code>me</code>, <code>changePassword</code>. <code>authRepositoryProvider</code> trả về bản cài đặt thật là <code>AuthApi</code>.</p>
+  <div class="why"><b>Vì sao:</b> <code>SessionController</code> chỉ biết interface, không biết Dio hay HTTP. Khi test, chỉ cần <code>authRepositoryProvider.overrideWithValue(FakeAuthRepository())</code> là kiểm tra được toàn bộ logic phiên mà không cần backend (xem <a href="#p-repository">Repository pattern</a>).</div>
+</div>
+
+<div class="card file-card" id="auth_api">
+  <header><span class="path">data/auth_api.dart</span><span class="tag real">thật</span></header>
+  <p><code>class AuthApi implements AuthRepository</code>: bản cài đặt gọi REST API.</p>
+  <table>
+    <tr><th>Hàm</th><th>Endpoint</th><th>Ghi chú</th></tr>
+    <tr><td><code>login</code></td><td><code>POST /api/v1/auth/login</code></td><td>public; <code>identifier</code> được trim, mật khẩu thì <b>không</b></td></tr>
+    <tr><td><code>refresh</code></td><td><code>POST /api/v1/auth/refresh</code></td><td>public</td></tr>
+    <tr><td><code>logout</code></td><td><code>POST /api/v1/auth/logout</code></td><td>thu hồi refresh token, trả 204</td></tr>
+    <tr><td><code>me</code></td><td><code>GET /api/v1/me</code></td><td>lấy lại thông tin người dùng</td></tr>
+    <tr><td><code>changePassword</code></td><td><code>PUT /api/v1/me/password</code></td><td>trả <code>TokenPair</code> mới</td></tr>
+  </table>
+  <p>Hàm riêng <code>_call</code> gom việc bắt <code>DioException</code> và đổi thành <code>ApiException</code>, nên mọi hàm chỉ ném một loại lỗi.</p>
+  <div class="why"><b>Vì sao không trim mật khẩu:</b> OpenAPI ghi rõ "Do not trim passwords". Mật khẩu có dấu cách ở đầu/cuối là hợp lệ.</div>
+</div>
+
+<h3>application/</h3>
+
+<div class="card file-card" id="session_controller">
+  <header><span class="path">application/session_controller.dart</span><span class="tag real">thật</span></header>
+  <p>Trạng thái phiên là <code>sealed class SessionState</code> với 3 dạng:</p>
+<pre><code><span class="t">SessionRestoring</span>()          <span class="c">// đang khôi phục lúc mở app</span>
+<span class="t">SignedOut</span>(expired: <span class="k">false</span>)   <span class="c">// expired = true khi bị đá ra ngoài ý muốn</span>
+<span class="t">Authenticated</span>(user)         <span class="c">// đã đăng nhập</span></code></pre>
+  <p>Các hành động của <code>SessionController</code> (Riverpod <code>Notifier</code>):</p>
+  <table>
+    <tr><th>Hàm</th><th>Làm gì</th></tr>
+    <tr><td><code>build()</code></td><td>Trả về <code>SessionRestoring</code> và lên lịch <code>_restore()</code></td></tr>
+    <tr><td><code>login()</code></td><td>Gọi API, lưu token, chuyển sang <code>Authenticated</code>. Ném <code>ApiException</code> để màn hình hiện lỗi</td></tr>
+    <tr><td><code>refresh()</code></td><td>Dùng refresh token đã lưu; trả <code>true/false</code>. Lỗi 401/403 thì xóa token</td></tr>
+    <tr><td><code>changePassword()</code></td><td>Đổi mật khẩu, nhận token mới; <code>mustChangePassword</code> thành <code>false</code> nên router tự cho vào app</td></tr>
+    <tr><td><code>logout()</code></td><td>Gọi API logout (lỗi mạng vẫn đăng xuất cục bộ), xóa token</td></tr>
+    <tr><td><code>expire()</code></td><td>Xóa token, <code>SignedOut(expired: true)</code> → màn "Phiên đã hết hạn"</td></tr>
+  </table>
+  <div class="why"><b>Vì sao dùng sealed class:</b> <code>switch</code> phải xử lý đủ mọi trạng thái; không thể có trạng thái "nửa vời" kiểu <code>isLoggedIn = true</code> nhưng <code>user = null</code>.</div>
+</div>
+
+<div class="card file-card" id="password_policy">
+  <header><span class="path">application/password_policy.dart</span><span class="tag real">thật</span></header>
+  <ul>
+    <li><code>validateNew</code>: 12–64 ký tự (đếm theo <code>runes</code>, tức ký tự thật), tối đa 72 byte UTF-8, khác mật khẩu hiện tại.</li>
+    <li><code>validateConfirm</code>: hai lần nhập khớp nhau.</li>
+    <li><code>byteTooltip</code>: giải thích giới hạn byte trong tooltip thay vì cảnh báo to (đúng spec AUTH-02).</li>
+  </ul>
+  <div class="why"><b>Vì sao có giới hạn 72 byte:</b> backend băm mật khẩu bằng BCrypt, thuật toán chỉ dùng 72 byte đầu. Chữ có dấu như "ữ" chiếm 3 byte, nên 25 chữ "ữ" (75 byte) dù dưới 64 ký tự vẫn bị từ chối.</div>
+</div>
+
+<h3>presentation/</h3>
+
+<div class="card file-card" id="login_screen">
+  <header><span class="path">presentation/login_screen.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-01</span></header>
+  <ul>
+    <li>Ô "Mã tài khoản hoặc email", ô mật khẩu có ẩn/hiện, nút "Đăng nhập", dòng trợ giúp "Chưa có tài khoản hoặc quên mật khẩu? Vui lòng liên hệ quản trị viên." (đúng spec, <b>không</b> có đăng ký hay quên mật khẩu qua email).</li>
+    <li>Biến thể lỗi: sai thông tin, tài khoản bị khóa, bị giới hạn số lần thử, mất mạng. Tất cả đi qua <code>AppAlert</code> + <code>e.userMessage</code>.</li>
+    <li><code>AutofillGroup</code> + <code>autofillHints</code>: trình duyệt/điện thoại gợi ý lưu mật khẩu.</li>
+    <li>Bấm Enter ở ô mật khẩu cũng gửi form; <code>_submitting</code> chặn gửi hai lần.</li>
+  </ul>
+</div>
+
+<div class="card file-card" id="change_password_form">
+  <header><span class="path">presentation/widgets/change_password_form.dart</span><span class="tag real">thật</span></header>
+  <p>Form dùng chung cho AUTH-02 và AUTH-03: mật khẩu hiện tại, mới, xác nhận; dòng yêu cầu + icon tooltip byte.</p>
+  <div class="why"><b>Trường hợp đặc biệt:</b> nếu mạng rớt sau khi gửi (<code>isOutcomeUncertain</code>), mật khẩu <i>có thể đã đổi rồi</i>. Gửi lại sẽ báo "mật khẩu hiện tại sai" gây hoang mang. Vì vậy app gọi <code>expire()</code> để người dùng đăng nhập lại. Đây là đúng yêu cầu "Recovery state" trong spec AUTH-03.</div>
+</div>
+
+<div class="card file-card" id="first_password_change">
+  <header><span class="path">presentation/first_password_change_screen.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-02</span></header>
+  <p>Giải thích lý do phải đổi mật khẩu, form đổi mật khẩu và nút "Đăng xuất". Không có nút "Bỏ qua"; router cũng chặn mọi route khác cho tới khi đổi xong.</p>
+</div>
+
+<div class="card file-card" id="change_password_screen">
+  <header><span class="path">presentation/change_password_screen.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-03</span></header>
+  <p>Mở từ menu tài khoản, nằm trong shell. Thành công thì hiện snackbar "Đã đổi mật khẩu thành công."</p>
+</div>
+
+<div class="card file-card" id="staff_profile">
+  <header><span class="path">presentation/staff_profile_screen.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-04</span></header>
+  <p>Chỉ đọc: họ tên, mã tài khoản, email, vai trò. Nút "Đổi mật khẩu" và "Đăng xuất". Không có nút sửa hồ sơ (spec cấm).</p>
+</div>
+
+<div class="card file-card" id="session_status">
+  <header><span class="path">presentation/session_status_screen.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-05</span></header>
+  <p>Một màn, 3 biến thể <code>expired / forbidden / notFound</code>. Nút hành động thay đổi theo phiên: còn đăng nhập thì "Về trang chủ", chưa thì "Đăng nhập lại". Màn này nằm <b>ngoài</b> shell để không còn dữ liệu bảo mật nào hiện phía sau.</p>
+</div>
+
+<div class="card file-card" id="logout_dialog">
+  <header><span class="path">presentation/logout_dialog.dart</span><span class="tag real">thật</span><span class="tag p2">AUTH-06</span></header>
+  <p><code>confirmLogout(context, ref)</code>: hộp thoại ngắn gọn với nút "Hủy" và "Đăng xuất", xác nhận thì gọi <code>logout()</code>.</p>
+</div>
+
+<div class="card file-card" id="auth_card">
+  <header><span class="path">presentation/widgets/auth_card.dart</span> &amp; <span class="path">splash_screen.dart</span><span class="tag real">thật</span></header>
+  <p><code>AuthCard</code>: thẻ giữa màn hình (tối đa 440px) có logo, "Library Access", phụ đề, tiêu đề; dùng chung cho AUTH-01/02/05. <code>SplashScreen</code>: vòng xoay khi đang khôi phục phiên.</p>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-librarian">Giải thích từng file · features/librarian/ <span class="tag p5">P5</span></h2>
+
+<p>Mỗi màn có một thư mục riêng. Hiện mỗi thư mục mới có <code>presentation/*_screen.dart</code> là placeholder; route và sidebar đã nối sẵn.</p>
+
+<table>
+  <tr><th>Thư mục</th><th>Màn</th><th>Route</th><th>API sẽ dùng</th><th>Độ khó</th></tr>
+  <tr><td><code>library_rules/</code></td><td>LIB-08 Quy định thư viện</td><td><code>/librarian/rules</code></td><td><code>GET /system-config</code></td><td>Dễ, nên làm đầu</td></tr>
+  <tr><td><code>my_shifts/</code></td><td>LIB-07 Ca trực của tôi</td><td><code>/librarian/shifts</code></td><td><code>GET /me/shifts</code></td><td>Dễ</td></tr>
+  <tr><td><code>visitors/</code></td><td>LIB-04 Khách ngoài, LIB-05 Chi tiết</td><td><code>/staff/visitors</code>, <code>/staff/visitors/:id</code></td><td><code>/visitors</code>, <code>/visitors/{id}</code></td><td>Trung bình</td></tr>
+  <tr><td><code>access_history/</code></td><td>LIB-06 Lịch sử ra vào</td><td><code>/staff/history</code></td><td><code>/access-history</code>, <code>/access-history/{id}</code></td><td>Trung bình (bảng, lọc, drawer)</td></tr>
+  <tr><td><code>occupants/</code></td><td>LIB-02 Người đang trong thư viện</td><td><code>/staff/occupants</code></td><td><code>/occupancy/people</code></td><td>Trung bình</td></tr>
+  <tr><td><code>manual_access/</code></td><td>LIB-03 Ghi nhận thủ công</td><td><code>/staff/manual-access</code></td><td><code>POST /access/manual</code>, <code>GET /access/requests/{key}</code></td><td>Khó nhất (idempotency)</td></tr>
+  <tr><td><code>dashboard/</code></td><td>LIB-01 Tổng quan</td><td><code>/librarian/overview</code></td><td><code>/occupancy</code> + STOMP <code>/topic/occupancy</code></td><td>Khó (realtime), nên làm cuối</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="f-dev">Giải thích từng file · features/dev/</h2>
+
+<div class="card file-card" id="gallery">
+  <header><span class="path">component_gallery_screen.dart</span><span class="tag real">thật</span><span class="tag p1">P1</span></header>
+  <p>Màn <code>/dev/components</code> dựng lại đúng bố cục Figma P1: 5 mục Màu sắc, Kiểu chữ (với các câu kiểm tra dấu tiếng Việt spec yêu cầu), Nút bấm (thêm trạng thái disabled và loading), Trạng thái, Trường nhập liệu &amp; thông báo. Chỉ được đăng ký route khi chạy debug (<code>kDebugMode</code>), không có trong bản build release.</p>
+  <div class="why"><b>Vì sao:</b> so sánh nhanh với Figma; các thành viên khác mở ra để biết đã có component nào mà không cần đọc code.</div>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="f-test">Giải thích từng file · test/</h2>
+
+<div class="card file-card">
+  <header><span class="path">test/widget_test.dart</span><span class="tag real">thật</span></header>
+  <p>Dựng toàn bộ app với <code>TokenStorage</code> giả (không có token) thông qua <code>tokenStorageProvider.overrideWithValue(...)</code>, và kiểm tra app vào đúng màn đăng nhập. Đây là ví dụ cách Riverpod giúp test: thay một provider, không cần sửa code thật.</p>
+</div>
+<div class="card file-card">
+  <header><span class="path">test/features/auth/password_policy_test.dart</span><span class="tag real">thật</span></header>
+  <p>5 test cho quy tắc mật khẩu: quá ngắn, hợp lệ, vượt 72 byte dù dưới 64 ký tự, trùng mật khẩu cũ, xác nhận không khớp.</p>
+</div>
+<div class="card file-card">
+  <header><span class="path">test/features/auth/session_controller_test.dart</span><span class="tag real">thật</span></header>
+  <p>7 test cho <code>SessionController</code> dùng <code>_FakeAuthRepository</code> và <code>_MemoryTokenStorage</code> (không cần backend, không cần plugin bảo mật):</p>
+  <ul>
+    <li>Không có token đã lưu → <code>SignedOut</code>.</li>
+    <li>Có refresh token hợp lệ → khôi phục thành <code>Authenticated</code>, lưu token mới.</li>
+    <li>Đăng nhập lưu token và giữ cờ <code>mustChangePassword</code>.</li>
+    <li>Đổi mật khẩu xóa cờ <code>mustChangePassword</code>.</li>
+    <li>Đăng nhập sai ném <code>ApiException</code>, vẫn <code>SignedOut</code>.</li>
+    <li>Đăng xuất thu hồi refresh token.</li>
+    <li><code>expire()</code> đánh dấu <code>expired = true</code> cho màn AUTH-05.</li>
+  </ul>
+</div>
+
+<!-- ============================================================ -->
+<h2 id="cong-thuc">6. Công thức: thêm một màn hình mới (ví dụ LIB-08)</h2>
+
+<p>Mọi màn có gọi API đều theo đúng 4 bước sau.</p>
+
+<h3>Bước 1: Model (<code>data/models/</code>)</h3>
+<pre><code><span class="c">// features/librarian/library_rules/data/models/system_config.dart</span>
+<span class="k">class</span> <span class="t">SystemConfig</span> {
+  <span class="k">const</span> <span class="t">SystemConfig</span>({<span class="k">required</span> <span class="k">this</span>.capacity, <span class="k">required</span> <span class="k">this</span>.maxStayMinutes});
+
+  <span class="k">factory</span> <span class="t">SystemConfig</span>.fromJson(<span class="t">Map</span>&lt;<span class="t">String</span>, <span class="k">dynamic</span>&gt; json) =&gt; <span class="t">SystemConfig</span>(
+        capacity: (json[<span class="s">'capacity'</span>] <span class="k">as</span> <span class="t">num</span>).toInt(),
+        maxStayMinutes: (json[<span class="s">'maxStayMinutes'</span>] <span class="k">as</span> <span class="t">num</span>?)?.toInt(),
+      );
+
+  <span class="k">final</span> <span class="t">int</span> capacity;
+  <span class="k">final</span> <span class="t">int</span>? maxStayMinutes;
+}</code></pre>
+<p class="callout warn"><strong>Lưu ý</strong>Tên trường ở đây chỉ là ví dụ. Hãy mở <code>docs/api/openapi-mvp.yaml</code>, tìm schema tương ứng để lấy đúng tên trường.</p>
+
+<h3>Bước 2: API (<code>data/</code>)</h3>
+<p>Màn đơn giản chỉ đọc có thể dùng thẳng class API như dưới. Màn có logic cần test (ví dụ LIB-03) nên tách thêm interface <code>XxxRepository</code> giống <code>AuthRepository</code>.</p>
+<pre><code><span class="k">final</span> rulesApiProvider = <span class="t">Provider</span>((ref) =&gt; <span class="t">RulesApi</span>(ref.read(dioProvider)));
+
+<span class="k">class</span> <span class="t">RulesApi</span> {
+  <span class="t">RulesApi</span>(<span class="k">this</span>._dio);
+  <span class="k">final</span> <span class="t">Dio</span> _dio;
+
+  <span class="t">Future</span>&lt;<span class="t">SystemConfig</span>&gt; fetch() <span class="k">async</span> {
+    <span class="k">try</span> {
+      <span class="k">final</span> res = <span class="k">await</span> _dio.get&lt;<span class="t">Map</span>&lt;<span class="t">String</span>, <span class="k">dynamic</span>&gt;&gt;(<span class="s">'/api/v1/system-config'</span>);
+      <span class="k">return</span> <span class="t">SystemConfig</span>.fromJson(res.data!);
+    } <span class="k">on</span> <span class="t">DioException</span> <span class="k">catch</span> (e) {
+      <span class="k">throw</span> <span class="t">ApiException</span>.fromDio(e);   <span class="c">// luôn đổi sang ApiException</span>
+    }
+  }
+}</code></pre>
+<p>Không cần tự gắn token, <code>AuthInterceptor</code> làm việc đó.</p>
+
+<h3>Bước 3: State (<code>application/</code>)</h3>
+<pre><code><span class="k">final</span> rulesProvider = <span class="t">FutureProvider</span>.autoDispose&lt;<span class="t">SystemConfig</span>&gt;(
+  (ref) =&gt; ref.read(rulesApiProvider).fetch(),
+);</code></pre>
+<p>Màn chỉ đọc thì <code>FutureProvider</code> là đủ. Màn có hành động (tạo khách, ghi nhận…) thì dùng <code>AsyncNotifier</code> như <code>SessionController</code>.</p>
+
+<h3>Bước 4: Màn hình (<code>presentation/</code>)</h3>
+<pre><code><span class="k">class</span> <span class="t">LibraryRulesScreen</span> <span class="k">extends</span> <span class="t">ConsumerWidget</span> {
+  <span class="k">const</span> <span class="t">LibraryRulesScreen</span>({<span class="k">super</span>.key});
+
+  @override
+  <span class="t">Widget</span> build(<span class="t">BuildContext</span> context, <span class="t">WidgetRef</span> ref) {
+    <span class="k">return</span> ref.watch(rulesProvider).when(
+      loading: () =&gt; <span class="k">const</span> <span class="t">LoadingState</span>(),
+      error: (e, _) =&gt; <span class="t">ErrorState</span>(onRetry: () =&gt; ref.invalidate(rulesProvider)),
+      data: (config) =&gt; <span class="t">ListView</span>(
+        padding: <span class="k">const</span> <span class="t">EdgeInsets</span>.all(<span class="t">AppSpacing</span>.xl),
+        children: [
+          <span class="k">const</span> <span class="t">Text</span>(<span class="s">'Quy định thư viện'</span>, style: <span class="t">AppTypography</span>.h1),
+          <span class="t">Text</span>(<span class="s">'Sức chứa: </span>${config.capacity}<span class="s"> người'</span>, style: <span class="t">AppTypography</span>.bodyL),
+        ],
+      ),
+    );
+  }
+}</code></pre>
+
+<h3>Nếu là màn hoàn toàn mới (chưa có route)</h3>
+<ol>
+  <li>Thêm hằng số đường dẫn vào <code>app/routes.dart</code>, đặt đúng tiền tố quyền (<code>/librarian</code>, <code>/staff</code>, <code>/admin</code>…).</li>
+  <li>Thêm <code>_route(Routes.xxx, const XxxScreen())</code> vào <code>app/router.dart</code> (trong <code>ShellRoute</code> nếu cần sidebar).</li>
+  <li>Nếu cần mục sidebar, thêm vào <code>app/shell/staff_nav.dart</code>.</li>
+  <li>Điều hướng bằng <code>context.go(Routes.xxx)</code>, đừng gõ chuỗi đường dẫn trực tiếp.</li>
+</ol>
+
+<!-- ============================================================ -->
+<h2 id="dung-component">7. Dùng component &amp; theme</h2>
+
+<table>
+  <tr><th>Muốn</th><th>Dùng</th><th>Đừng dùng</th></tr>
+  <tr><td>Màu</td><td><code>AppColors.navy</code>, <code>AppColors.error</code></td><td><code>Color(0xFF...)</code>, <code>Colors.blue</code></td></tr>
+  <tr><td>Chữ</td><td><code>AppTypography.h2</code>, <code>AppTypography.bodyM.copyWith(color: ...)</code></td><td><code>TextStyle(fontSize: 22)</code></td></tr>
+  <tr><td>Khoảng cách</td><td><code>SizedBox(height: AppSpacing.md)</code></td><td><code>SizedBox(height: 15)</code></td></tr>
+  <tr><td>Nút</td><td><code>AppButton(...)</code></td><td><code>ElevatedButton</code> tự style</td></tr>
+  <tr><td>Ô nhập</td><td><code>AppTextField(label: ...)</code></td><td><code>TextField</code> tự vẽ nhãn</td></tr>
+  <tr><td>Trạng thái</td><td><code>StatusBadge.inside()</code>, <code>AppAlert(...)</code></td><td><code>Container</code> màu tự chế</td></tr>
+  <tr><td>Xác nhận nguy hiểm</td><td><code>showConfirmDialog(..., destructive: true)</code></td><td><code>AlertDialog</code> tự viết</td></tr>
+  <tr><td>Loading / lỗi / rỗng</td><td><code>LoadingState</code>, <code>ErrorState</code>, <code>EmptyState</code></td><td>Tự viết mỗi màn một kiểu</td></tr>
+  <tr><td>Ngày giờ</td><td><code>Fmt.date(t)</code>, <code>Fmt.time(t)</code></td><td><code>t.toString()</code>, <code>DateFormat</code> rải rác</td></tr>
+  <tr><td>Thông báo lỗi API</td><td><code>e.userMessage</code></td><td>Hiện <code>e.code</code> hoặc <code>e.toString()</code></td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="quy-uoc">8. Quy ước cho cả nhóm</h2>
+<ul>
+  <li><b>Mỗi người một thư mục feature</b>: <code>features/student</code> (P3–P4), <code>features/admin</code> (P6–P9), <code>features/kiosk</code> (P10–P11). Chỉ sửa <code>core/</code>, <code>shared/</code>, <code>app/</code> khi đã báo nhóm.</li>
+  <li><b>Màn hình không gọi Dio trực tiếp</b>: luôn đi qua <code>data/</code> → <code>application/</code>.</li>
+  <li><b>Chữ hiển thị 100% tiếng Việt có dấu</b>, đúng bộ từ vựng spec: "Ghi nhận vào/ra", "Đang trong thư viện / Ngoài thư viện", "Khuôn mặt / Mã QR / Thủ công".</li>
+  <li><b>Thao tác ghi nhận</b>: một thao tác một idempotency key; mạng rớt thì kiểm tra kết quả bằng key đó, không tạo key mới, không báo "Thất bại" khi chưa chắc.</li>
+  <li><b>Git</b>: mỗi phần một nhánh (<code>feat/p1-design-system</code>, <code>feat/p2-auth</code>, <code>feat/p5-lib-08</code>…), chạy <code>flutter analyze</code> + <code>flutter test</code> trước khi tạo PR.</li>
+</ul>
+
+<!-- ============================================================ -->
+<h2 id="loi">9. Lỗi thường gặp</h2>
+<table>
+  <tr><th>Hiện tượng</th><th>Nguyên nhân thường gặp</th><th>Cách xử lý</th></tr>
+  <tr><td>Đăng nhập báo "Không có kết nối mạng"</td><td>Backend chưa chạy, hoặc sai <code>API_BASE_URL</code></td><td>Mở <code>http://localhost:8080</code> trên trình duyệt kiểm tra backend; emulator Android phải dùng <code>10.0.2.2</code></td></tr>
+  <tr><td>Chạy web (Chrome) đăng nhập báo "Không có kết nối mạng", Console có lỗi CORS</td><td><b>Hiện tại backend tắt CORS</b> (<code>.cors(AbstractHttpConfigurer::disable)</code> trong <code>SecurityConfig.java</code>), nên trình duyệt chặn web chạy ở cổng khác 8080</td><td>Trao đổi với bạn làm backend để bật CORS cho origin dev (ví dụ <code>http://localhost:*</code>). Trong lúc chờ, chạy trên Android emulator/Windows desktop (không bị CORS), hoặc tạm chạy Chrome bằng <code>flutter run -d chrome --web-browser-flag "--disable-web-security"</code> (chỉ để dev)</td></tr>
+  <tr><td>Android không gọi được <code>http://</code></td><td>Android chặn HTTP không mã hóa mặc định</td><td>Bật <code>android:usesCleartextTraffic="true"</code> trong <code>AndroidManifest.xml</code> (chỉ cho môi trường dev)</td></tr>
+  <tr><td>Chữ tiếng Việt hiện sai font</td><td>Chưa chạy lại sau khi thêm font</td><td>Dừng app, <code>flutter clean</code>, <code>flutter pub get</code>, chạy lại (hot reload không nạp font mới)</td></tr>
+  <tr><td><code>version solving failed</code> khi thêm thư viện</td><td>Xung đột phiên bản, thường với <code>intl</code></td><td>Giữ <code>intl: ^0.20.2</code> (phiên bản <code>flutter_localizations</code> yêu cầu)</td></tr>
+  <tr><td>Mở <code>/dev/components</code> báo không tìm thấy</td><td>Đang chạy bản release/profile</td><td>Chạy bằng <code>flutter run</code> (debug)</td></tr>
+  <tr><td>Bị đá ra màn "Phiên đã hết hạn" liên tục</td><td>Refresh token bị thu hồi (đổi mật khẩu ở nơi khác, admin khóa tài khoản, hoặc backend khởi động lại với <code>JWT_SECRET</code> mới)</td><td>Đăng nhập lại; kiểm tra <code>JWT_SECRET</code> backend có cố định không</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2 id="patterns">10. Design patterns đã áp dụng</h2>
+
+<p class="lead">Mục này trả lời yêu cầu số 10: <i>"Có áp dụng các Pattern thiết kế và có giải thích rõ ràng"</i>. Mỗi pattern dưới đây đều <b>có thật trong source code</b>, kèm vị trí file, đoạn code minh họa, lý do dùng và điều gì xảy ra nếu không dùng.</p>
+
+<div class="callout info">
+  <strong>Cách đọc</strong>
+  Pattern được chia theo cách phân loại kinh điển của nhóm GoF (<i>Design Patterns</i>, Gamma và cộng sự, 1994) thành <span class="tag cre">Khởi tạo</span> <span class="tag str">Cấu trúc</span> <span class="tag beh">Hành vi</span>, cộng thêm nhóm <span class="tag arc">Kiến trúc &amp; ứng dụng</span> (Repository, Dependency Injection, MVVM… từ sách <i>Patterns of Enterprise Application Architecture</i> của Martin Fowler và thực hành Flutter).
+</div>
+
+<h3 id="p-summary">10.1 Bảng tổng hợp</h3>
+<table>
+  <tr><th style="width:36px">#</th><th style="width:190px">Pattern</th><th style="width:120px">Nhóm</th><th>Áp dụng ở đâu</th><th>Giải quyết vấn đề gì</th></tr>
+  <tr><td>1</td><td><a href="#p-singleton">Singleton</a></td><td><span class="tag cre">Khởi tạo</span></td><td><code>dioProvider</code>, <code>tokenStorageProvider</code>, <code>realtimeClientProvider</code></td><td>Cả app dùng chung một Dio, một kho token, một kết nối WebSocket</td></tr>
+  <tr><td>2</td><td><a href="#p-factory">Factory (factory constructor)</a></td><td><span class="tag cre">Khởi tạo</span></td><td><code>User.fromJson</code>, <code>TokenPair.fromJson</code>, <code>ApiException.fromDio</code>, <code>Paged.fromJson</code>, <code>StatusBadge.active()</code>…</td><td>Gom logic tạo object phức tạp vào một chỗ</td></tr>
+  <tr><td>3</td><td><a href="#p-adapter">Adapter</a></td><td><span class="tag str">Cấu trúc</span></td><td><code>ApiException.fromDio</code>; cầu nối Riverpod → GoRouter trong <code>router.dart</code></td><td>Làm hai giao diện không tương thích làm việc được với nhau</td></tr>
+  <tr><td>4</td><td><a href="#p-facade">Facade</a></td><td><span class="tag str">Cấu trúc</span></td><td><code>SessionController</code>, <code>RealtimeClient</code>, <code>AuthApi._call</code></td><td>Một API đơn giản che nhiều bước phức tạp phía sau</td></tr>
+  <tr><td>5</td><td><a href="#p-composite">Composite</a></td><td><span class="tag str">Cấu trúc</span></td><td>Cây widget; <code>StaffShell</code>, <code>AuthCard</code>, <code>AppAlert</code></td><td>Ghép widget nhỏ thành màn hình, xử lý cây như một khối</td></tr>
+  <tr><td>6</td><td><a href="#p-observer">Observer</a></td><td><span class="tag beh">Hành vi</span></td><td><code>ref.watch</code>, <code>refreshListenable</code>, <code>RealtimeClient.status</code>, STOMP <code>subscribe</code></td><td>UI và router tự cập nhật khi dữ liệu đổi</td></tr>
+  <tr><td>7</td><td><a href="#p-state">State</a></td><td><span class="tag beh">Hành vi</span></td><td><code>sealed class SessionState</code> + <code>_redirect</code></td><td>Hành vi app thay đổi rõ ràng theo trạng thái phiên</td></tr>
+  <tr><td>8</td><td><a href="#p-chain">Chain of Responsibility</a></td><td><span class="tag beh">Hành vi</span></td><td>Chuỗi interceptor Dio, <code>AuthInterceptor</code></td><td>Mỗi request/lỗi đi qua chuỗi xử lý có thể chặn hoặc chuyển tiếp</td></tr>
+  <tr><td>9</td><td><a href="#p-strategy">Strategy (dạng hàm)</a></td><td><span class="tag beh">Hành vi</span></td><td><code>Paged.fromJson(json, fromItem)</code>, callback của <code>AuthInterceptor</code>, <code>validator</code></td><td>Thay thuật toán từ bên ngoài, không sửa class</td></tr>
+  <tr><td>10</td><td><a href="#p-repository">Repository</a></td><td><span class="tag arc">Kiến trúc</span></td><td><code>AuthRepository</code> + <code>AuthApi</code></td><td>Tách logic nghiệp vụ khỏi nguồn dữ liệu; test bằng bản giả</td></tr>
+  <tr><td>11</td><td><a href="#p-di">Dependency Injection</a></td><td><span class="tag arc">Kiến trúc</span></td><td>Toàn bộ provider Riverpod; <code>overrideWithValue</code> trong test</td><td>Không class nào tự <code>new</code> phụ thuộc của mình</td></tr>
+  <tr><td>12</td><td><a href="#p-mvvm">MVVM + luồng dữ liệu một chiều</a></td><td><span class="tag arc">Kiến trúc</span></td><td><code>presentation/</code> ↔ <code>application/</code> ↔ <code>data/</code></td><td>Màn hình không chứa logic, logic không chứa widget</td></tr>
+  <tr><td>13</td><td><a href="#p-dto">DTO / Immutable Value Object</a></td><td><span class="tag arc">Ứng dụng</span></td><td><code>User</code>, <code>TokenPair</code>, <code>Paged</code>, <code>FieldError</code></td><td>Dữ liệu truyền qua lại không bị sửa ngầm</td></tr>
+  <tr><td>14</td><td><a href="#p-guard">Route Guard</a></td><td><span class="tag arc">Ứng dụng</span></td><td><code>_redirect</code>, <code>_canAccess</code> trong <code>router.dart</code></td><td>Chặn truy cập theo phiên và vai trò ở một chỗ</td></tr>
+  <tr><td>15</td><td><a href="#p-singleflight">Single-flight token refresh</a></td><td><span class="tag arc">Ứng dụng</span></td><td><code>AuthInterceptor extends QueuedInterceptor</code></td><td>Nhiều request hết hạn cùng lúc chỉ refresh một lần</td></tr>
+  <tr><td>16</td><td><a href="#p-idempotency">Idempotency Key</a></td><td><span class="tag arc">Ứng dụng</span></td><td><code>core/utils/idempotency.dart</code> (dùng cho LIB-03)</td><td>Gửi lại khi mạng rớt mà không ghi nhận trùng</td></tr>
+</table>
+
+<!-- Creational -->
+<h3 id="p-creational">10.2 Nhóm khởi tạo (Creational)</h3>
+
+<div class="card pattern" id="p-singleton">
+  <div class="meta"><h3>1. Singleton</h3><span class="tag cre">Khởi tạo</span></div>
+  <div class="where">Ở: <code>core/network/api_client.dart</code>, <code>core/storage/token_storage.dart</code>, <code>core/realtime/realtime_client.dart</code></div>
+  <p><b>Định nghĩa:</b> đảm bảo một class chỉ có <b>một thể hiện</b> và mọi nơi dùng chung thể hiện đó.</p>
+<pre><code><span class="k">final</span> dioProvider = <span class="t">Provider</span>&lt;<span class="t">Dio</span>&gt;((ref) {
+  <span class="k">final</span> dio = <span class="t">Dio</span>(<span class="t">BaseOptions</span>(baseUrl: <span class="t">Env</span>.apiBaseUrl, ...));
+  dio.interceptors.add(<span class="t">AuthInterceptor</span>(...));
+  <span class="k">return</span> dio;   <span class="c">// Riverpod tạo một lần, lưu lại, mọi ref.read trả về cùng object</span>
+});</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Interceptor, timeout và base URL phải giống nhau cho mọi request. Kho token phải là một, nếu không chỗ này lưu token mới còn chỗ kia vẫn đọc token cũ. Chỉ nên có <b>một</b> kết nối WebSocket tới server.</dd>
+    <dt>Khác Singleton cổ điển</dt><dd>Không dùng <code>static instance</code> hay constructor private. "Một thể hiện" do Riverpod quản lý trong <code>ProviderScope</code>, nên test vẫn thay được bằng bản giả. Singleton cổ điển dùng biến toàn cục rất khó test.</dd>
+    <dt>Nếu không dùng</dt><dd>Mỗi màn tự <code>Dio()</code> thì phải gắn interceptor nhiều lần, dễ quên, và refresh token chạy song song gây thu hồi phiên.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-factory">
+  <div class="meta"><h3>2. Factory (factory constructor / named constructor)</h3><span class="tag cre">Khởi tạo</span></div>
+  <div class="where">Ở: <code>user.dart</code>, <code>token_pair.dart</code>, <code>api_error.dart</code>, <code>paged.dart</code>, <code>status_badge.dart</code></div>
+  <p><b>Định nghĩa:</b> đưa logic "tạo object như thế nào" vào một phương thức riêng, người gọi chỉ yêu cầu "cho tôi một object từ dữ liệu này".</p>
+<pre><code><span class="c">// Từ JSON → object, kèm chuyển kiểu (String → enum, num → int)</span>
+<span class="k">factory</span> <span class="t">User</span>.fromJson(<span class="t">Map</span>&lt;<span class="t">String</span>, <span class="k">dynamic</span>&gt; json) =&gt; <span class="t">User</span>(
+      role: <span class="t">UserRole</span>.fromApi(json[<span class="s">'role'</span>] <span class="k">as</span> <span class="t">String</span>),
+      version: (json[<span class="s">'version'</span>] <span class="k">as</span> <span class="t">num</span>).toInt(), ...);
+
+<span class="c">// Một factory trả về nhiều "loại" lỗi khác nhau tùy đầu vào</span>
+<span class="k">factory</span> <span class="t">ApiException</span>.fromDio(<span class="t">DioException</span> e) {
+  <span class="k">switch</span> (e.type) {
+    <span class="k">case</span> <span class="t">DioExceptionType</span>.connectionError: <span class="k">return const</span> <span class="t">ApiException</span>(code: <span class="t">ClientErrorCode</span>.network);
+    ...
+  }
+}
+
+<span class="c">// Named constructor = "công thức" tạo sẵn</span>
+<span class="k">const</span> <span class="t">StatusBadge</span>.inside() : label = <span class="s">'Đang trong thư viện'</span>, tone = <span class="t">BadgeTone</span>.success, icon = <span class="t">Icons</span>.login;</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Chuyển JSON có nhiều quy tắc (đổi kiểu, giá trị mặc định, lỗi định dạng). Gom vào factory thì cả app chỉ có <b>một</b> nơi biết hình dạng JSON của backend. <code>StatusBadge.inside()</code> đảm bảo mọi màn hiển thị trạng thái giống hệt nhau, đúng từ vựng spec.</dd>
+    <dt>Nếu không dùng</dt><dd>Mỗi màn tự viết <code>json['role'] == 'LIBRARIAN'</code>. Backend đổi một trường là phải sửa nhiều nơi.</dd>
+  </dl>
+</div>
+
+<!-- Structural -->
+<h3 id="p-structural">10.3 Nhóm cấu trúc (Structural)</h3>
+
+<div class="card pattern" id="p-adapter">
+  <div class="meta"><h3>3. Adapter</h3><span class="tag str">Cấu trúc</span></div>
+  <div class="where">Ở: <code>core/network/api_error.dart</code>, <code>app/router.dart</code></div>
+  <p><b>Định nghĩa:</b> bọc một giao diện để nó "khớp" với giao diện mà phía kia mong đợi, giống ổ cắm chuyển đổi.</p>
+  <h4>Adapter 1: lỗi Dio / lỗi backend → lỗi của app</h4>
+<pre><code><span class="c">// Đầu vào: DioException (thư viện) + JSON ApiError (backend)</span>
+<span class="c">// Đầu ra:  ApiException (app) có userMessage tiếng Việt</span>
+<span class="k">on</span> <span class="t">DioException</span> <span class="k">catch</span> (e) { <span class="k">throw</span> <span class="t">ApiException</span>.fromDio(e); }</code></pre>
+  <h4>Adapter 2: Riverpod → GoRouter</h4>
+<pre><code><span class="c">// GoRouter chỉ hiểu Listenable; trạng thái phiên lại nằm trong Riverpod.</span>
+<span class="k">final</span> refresh = <span class="t">ValueNotifier</span>&lt;<span class="t">SessionState</span>&gt;(ref.read(sessionControllerProvider));
+ref.listen(sessionControllerProvider, (_, next) =&gt; refresh.value = next);
+<span class="t">GoRouter</span>(refreshListenable: refresh, ...);</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Màn hình không cần biết lỗi đến từ Dio, từ mất mạng hay từ backend; chỉ dùng <code>e.userMessage</code>. Sau này đổi Dio sang thư viện khác thì chỉ sửa adapter.</dd>
+    <dt>Nếu không dùng</dt><dd>Màn hình phải <code>catch (DioException)</code> và tự đọc <code>e.response?.data['code']</code>, tức là UI phụ thuộc trực tiếp thư viện HTTP.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-facade">
+  <div class="meta"><h3>4. Facade</h3><span class="tag str">Cấu trúc</span></div>
+  <div class="where">Ở: <code>features/auth/application/session_controller.dart</code>, <code>core/realtime/realtime_client.dart</code></div>
+  <p><b>Định nghĩa:</b> cung cấp một giao diện đơn giản cho một hệ thống con phức tạp.</p>
+<pre><code><span class="c">// Màn đăng nhập chỉ gọi một dòng:</span>
+<span class="k">await</span> ref.read(sessionControllerProvider.notifier).login(identifier: ..., password: ...);
+
+<span class="c">// Phía sau Facade làm 3 việc với 3 hệ thống con:</span>
+<span class="t">Future</span>&lt;<span class="k">void</span>&gt; login(...) <span class="k">async</span> {
+  <span class="k">final</span> pair = <span class="k">await</span> _repository.login(...);          <span class="c">// 1. gọi API</span>
+  <span class="k">await</span> _tokens.save(accessToken: ..., refreshToken: ...); <span class="c">// 2. lưu token an toàn</span>
+  state = <span class="t">Authenticated</span>(pair.user);                    <span class="c">// 3. đổi state → router tự chuyển trang</span>
+}</code></pre>
+  <p><code>RealtimeClient</code> cũng là Facade: bên ngoài chỉ thấy <code>connect()</code>, <code>subscribeJson()</code>, <code>disconnect()</code>; cấu hình STOMP, header xác thực, tự kết nối lại, giải mã JSON đều nằm bên trong.</p>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Màn login, đổi mật khẩu, đăng xuất, interceptor đều cần "đổi phiên". Có Facade thì thứ tự "gọi API → lưu token → đổi state" luôn đúng, không màn nào làm thiếu bước.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-composite">
+  <div class="meta"><h3>5. Composite</h3><span class="tag str">Cấu trúc</span></div>
+  <div class="where">Ở: toàn bộ giao diện; rõ nhất ở <code>app/shell/staff_shell.dart</code>, <code>auth_card.dart</code>, <code>app_alert.dart</code></div>
+  <p><b>Định nghĩa:</b> tổ chức object thành cây, nơi một nút có thể chứa các nút con, và cả cây được dùng như một phần tử duy nhất.</p>
+<pre><code><span class="t">StaffShell</span>(child: page)          <span class="c">// một widget...</span>
+  └ <span class="t">Row</span>
+     ├ <span class="t">_Sidebar</span> └ <span class="t">ListView</span> └ <span class="t">_NavTile</span> × n
+     └ <span class="t">Column</span>
+        ├ <span class="t">_TopBar</span>
+        └ page                      <span class="c">// ...chứa cả một màn hình bên trong</span></code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Flutter xây trên Composite: <code>Widget</code> vừa là lá vừa là nút chứa. Mình tận dụng để <b>ghép</b> component nhỏ (<code>AppButton</code>, <code>AppTextField</code>) thành khối lớn (<code>ChangePasswordForm</code>) rồi dùng lại khối đó ở cả AUTH-02 và AUTH-03.</dd>
+  </dl>
+</div>
+
+<!-- Behavioral -->
+<h3 id="p-behavioral">10.4 Nhóm hành vi (Behavioral)</h3>
+
+<div class="card pattern" id="p-observer">
+  <div class="meta"><h3>6. Observer (và Publish–Subscribe)</h3><span class="tag beh">Hành vi</span></div>
+  <div class="where">Ở: mọi <code>ref.watch</code>; <code>router.dart</code> (<code>refreshListenable</code>); <code>RealtimeClient.status</code>; STOMP <code>subscribe</code></div>
+  <p><b>Định nghĩa:</b> một đối tượng (subject) thông báo cho mọi đối tượng đăng ký (observer) khi nó thay đổi.</p>
+  <table>
+    <tr><th>Subject</th><th>Observer</th><th>Khi nào báo</th></tr>
+    <tr><td><code>SessionController.state</code></td><td><code>StaffShell</code>, <code>StaffProfileScreen</code>, <code>SessionStatusScreen</code> (qua <code>ref.watch</code>)</td><td>Đăng nhập, đăng xuất, hết phiên</td></tr>
+    <tr><td><code>ValueNotifier refresh</code></td><td><code>GoRouter</code></td><td>Phiên đổi → chạy lại <code>redirect</code></td></tr>
+    <tr><td><code>RealtimeClient.status</code></td><td>Chỉ báo kết nối LIB-01</td><td>Kết nối / mất kết nối</td></tr>
+    <tr><td>Topic STOMP <code>/topic/occupancy</code></td><td>Callback <code>subscribeJson</code></td><td>Backend đẩy số người mới (Publish–Subscribe qua mạng)</td></tr>
+  </table>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Không màn nào phải tự hỏi "phiên còn không?" hay "có ai vào thư viện chưa?". Dữ liệu đổi thì UI tự vẽ lại. Đăng xuất ở menu thì router tự đưa về <code>/login</code> mà màn hiện tại không cần biết.</dd>
+    <dt>Nếu không dùng</dt><dd>Phải truyền callback chồng chéo giữa các màn, hoặc hỏi lại server theo chu kỳ (polling) gây tốn tài nguyên và dữ liệu luôn trễ.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-state">
+  <div class="meta"><h3>7. State</h3><span class="tag beh">Hành vi</span></div>
+  <div class="where">Ở: <code>session_controller.dart</code> (<code>SessionState</code>), <code>router.dart</code> (<code>_redirect</code>)</div>
+  <p><b>Định nghĩa:</b> hành vi của hệ thống thay đổi theo trạng thái nội bộ, mỗi trạng thái được biểu diễn bằng một class riêng.</p>
+<pre><code><span class="k">sealed class</span> <span class="t">SessionState</span> {}
+<span class="k">class</span> <span class="t">SessionRestoring</span> <span class="k">extends</span> <span class="t">SessionState</span> {}
+<span class="k">class</span> <span class="t">SignedOut</span>        <span class="k">extends</span> <span class="t">SessionState</span> { <span class="k">final</span> <span class="t">bool</span> expired; }
+<span class="k">class</span> <span class="t">Authenticated</span>    <span class="k">extends</span> <span class="t">SessionState</span> { <span class="k">final</span> <span class="t">User</span> user; }
+
+<span class="c">// Mỗi trạng thái → một hành vi điều hướng khác nhau</span>
+<span class="k">switch</span> (session) {
+  <span class="k">case</span> <span class="t">SessionRestoring</span>():          <span class="k">return</span> <span class="t">Routes</span>.splash;
+  <span class="k">case</span> <span class="t">SignedOut</span>(:<span class="k">final</span> expired):   <span class="k">return</span> expired ? <span class="t">Routes</span>.sessionExpired : <span class="t">Routes</span>.login;
+  <span class="k">case</span> <span class="t">Authenticated</span>(:<span class="k">final</span> user):  ...
+}</code></pre>
+  <div class="uml">          login() / refresh() ok
+SessionRestoring ─────────────────────────▶ Authenticated
+       │                                       │      ▲
+       │ không có token                logout()│      │ login()
+       ▼                                       ▼      │
+   SignedOut ◀──────── expire() ─────────── SignedOut(expired: true)</div>
+  <dl>
+    <dt>Vì sao dùng</dt><dd><code>sealed</code> khiến trình biên dịch <b>bắt buộc</b> xử lý đủ 3 trạng thái; thêm trạng thái mới mà quên xử lý là báo lỗi ngay khi build. Dữ liệu gắn đúng trạng thái: chỉ <code>Authenticated</code> mới có <code>user</code>.</dd>
+    <dt>Nếu không dùng</dt><dd>Dùng nhiều cờ rời (<code>isLoading</code>, <code>isLoggedIn</code>, <code>user?</code>) thì có thể xảy ra tổ hợp vô lý như <code>isLoggedIn = true</code> mà <code>user = null</code>, gây crash.</dd>
+    <dt>Ghi chú</dt><dd>Đây là biến thể hiện đại của State pattern trong Dart 3 (sealed class + pattern matching). GoF cổ điển đặt hành vi vào từng class con; ở đây hành vi nằm trong <code>switch</code> vì router mới là nơi phản ứng với trạng thái.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-chain">
+  <div class="meta"><h3>8. Chain of Responsibility (Interceptor)</h3><span class="tag beh">Hành vi</span></div>
+  <div class="where">Ở: <code>core/network/auth_interceptor.dart</code>, <code>core/network/api_client.dart</code></div>
+  <p><b>Định nghĩa:</b> yêu cầu được truyền qua một chuỗi bộ xử lý; mỗi bộ có thể xử lý, sửa, chặn lại, hoặc chuyển tiếp cho bộ kế tiếp.</p>
+<pre><code><span class="k">void</span> onRequest(options, handler) {
+  options.headers[<span class="s">'Authorization'</span>] = <span class="s">'Bearer </span>$token<span class="s">'</span>;
+  handler.next(options);              <span class="c">// chuyển tiếp cho mắt xích sau</span>
+}
+
+<span class="t">Future</span>&lt;<span class="k">void</span>&gt; onError(err, handler) <span class="k">async</span> {
+  <span class="k">if</span> (!shouldRefresh) <span class="k">return</span> handler.next(err);   <span class="c">// không phải việc của mình → chuyển tiếp</span>
+  ...
+  handler.resolve(<span class="k">await</span> _dio.fetch(options));    <span class="c">// tự xử lý xong → dừng chuỗi, trả kết quả</span>
+}</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Gắn token, refresh token, (sau này) ghi log hay đo thời gian là các mối quan tâm độc lập. Mỗi cái một interceptor, thêm/bớt không đụng code gọi API.</dd>
+    <dt>Nếu không dùng</dt><dd>Mỗi hàm API phải tự gắn header và tự bắt lỗi 401, lặp lại ở hàng chục chỗ.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-strategy">
+  <div class="meta"><h3>9. Strategy (dạng hàm)</h3><span class="tag beh">Hành vi</span></div>
+  <div class="where">Ở: <code>paged.dart</code>, <code>auth_interceptor.dart</code>, <code>app_text_field.dart</code></div>
+  <p><b>Định nghĩa:</b> đóng gói một thuật toán thành đối tượng có thể hoán đổi, để class dùng nó không cần biết chi tiết. Dart có hàm là "first-class", nên strategy thường được truyền dưới dạng hàm thay vì interface một phương thức.</p>
+<pre><code><span class="c">// Thuật toán "đọc một phần tử" được truyền vào → Paged dùng cho mọi loại dữ liệu</span>
+<span class="c">// (Visitor, AccessSession là model sẽ tạo ở LIB-04 và LIB-06)</span>
+<span class="t">Paged</span>.fromJson(json, <span class="t">Visitor</span>.fromJson);
+<span class="t">Paged</span>.fromJson(json, <span class="t">AccessSession</span>.fromJson);
+
+<span class="c">// Cách refresh và cách xử lý hết phiên được "cắm" vào interceptor</span>
+<span class="t">AuthInterceptor</span>(
+  refreshSession: () =&gt; ref.read(sessionControllerProvider.notifier).refresh(),
+  onSessionExpired: () =&gt; ref.read(sessionControllerProvider.notifier).expire(),
+);
+
+<span class="c">// Quy tắc kiểm tra được truyền vào ô nhập</span>
+<span class="t">AppTextField</span>(validator: (v) =&gt; <span class="t">PasswordPolicy</span>.validateNew(v, current: ...));</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd><code>AuthInterceptor</code> nằm ở <code>core/</code> nhưng không cần import <code>SessionController</code>; nó chỉ biết "có một hàm refresh". Nhờ vậy interceptor độc lập và test được riêng.</dd>
+  </dl>
+</div>
+
+<!-- Architectural -->
+<h3 id="p-architectural">10.5 Pattern kiến trúc &amp; ứng dụng</h3>
+
+<div class="card pattern" id="p-repository">
+  <div class="meta"><h3>10. Repository</h3><span class="tag arc">Kiến trúc</span></div>
+  <div class="where">Ở: <code>features/auth/data/auth_repository.dart</code> (interface), <code>features/auth/data/auth_api.dart</code> (cài đặt)</div>
+  <p><b>Định nghĩa:</b> một lớp trung gian giữa logic nghiệp vụ và nguồn dữ liệu. Phía nghiệp vụ chỉ làm việc với một <b>interface</b>, không biết dữ liệu đến từ REST, cache hay dữ liệu giả.</p>
+  <div class="uml">┌──────────────────────┐   dùng    ┌──────────────────────────┐
+│  SessionController   │ ────────▶ │ «interface» AuthRepository│
+│  (application/)      │           │  login() refresh() ...    │
+└──────────────────────┘           └────────────▲─────────────┘
+                                                │ implements
+                         ┌──────────────────────┴───────────────┐
+                         │                                      │
+              ┌──────────┴─────────┐              ┌─────────────┴──────────┐
+              │ AuthApi  (thật)    │              │ _FakeAuthRepository    │
+              │ Dio → REST backend │              │ (trong test, trả dữ    │
+              └────────────────────┘              │  liệu dựng sẵn)        │
+                                                  └────────────────────────┘</div>
+<pre><code><span class="k">abstract interface class</span> <span class="t">AuthRepository</span> {
+  <span class="t">Future</span>&lt;<span class="t">TokenPair</span>&gt; login({<span class="k">required</span> <span class="t">String</span> identifier, <span class="k">required</span> <span class="t">String</span> password});
+  <span class="t">Future</span>&lt;<span class="t">TokenPair</span>&gt; refresh(<span class="t">String</span> refreshToken);
+  ...
+}
+
+<span class="k">final</span> authRepositoryProvider =
+    <span class="t">Provider</span>&lt;<span class="t">AuthRepository</span>&gt;((ref) =&gt; <span class="t">AuthApi</span>(ref.read(dioProvider)));
+
+<span class="k">class</span> <span class="t">AuthApi</span> <span class="k">implements</span> <span class="t">AuthRepository</span> { ... }   <span class="c">// gọi REST</span></code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Logic phiên (khôi phục, đăng nhập, đổi mật khẩu, hết hạn) là phần quan trọng nhất của P2. Nhờ Repository, <code>session_controller_test.dart</code> kiểm tra được 7 tình huống <b>không cần backend</b>, chạy trong khoảng 1 giây.</dd>
+    <dt>Nếu không dùng</dt><dd>Muốn test phải bật backend + database, hoặc không test được. Backend đổi đường dẫn thì phải sửa cả logic nghiệp vụ.</dd>
+    <dt>Phạm vi</dt><dd>Áp dụng cho <code>auth</code> vì có logic cần test. Các màn chỉ đọc đơn giản (LIB-07, LIB-08) có thể dùng thẳng class API; khi có logic (LIB-03 ghi nhận thủ công) thì tách interface tương tự.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-di">
+  <div class="meta"><h3>11. Dependency Injection (DI)</h3><span class="tag arc">Kiến trúc</span></div>
+  <div class="where">Ở: mọi <code>Provider</code>; <code>test/widget_test.dart</code>, <code>test/features/auth/session_controller_test.dart</code></div>
+  <p><b>Định nghĩa:</b> một object <b>nhận</b> phụ thuộc từ bên ngoài thay vì tự tạo. Đây là cách hiện thực nguyên lý <i>Dependency Inversion</i> (chữ D trong SOLID).</p>
+<pre><code><span class="c">// Code thật: SessionController không tự new AuthApi</span>
+<span class="t">AuthRepository</span> <span class="k">get</span> _repository =&gt; ref.read(authRepositoryProvider);
+<span class="t">TokenStorage</span>   <span class="k">get</span> _tokens     =&gt; ref.read(tokenStorageProvider);
+
+<span class="c">// Test: "tiêm" bản giả vào, code thật không đổi một dòng</span>
+<span class="t">ProviderContainer</span>(overrides: [
+  authRepositoryProvider.overrideWithValue(<span class="t">_FakeAuthRepository</span>()),
+  tokenStorageProvider.overrideWithValue(<span class="t">_MemoryTokenStorage</span>()),
+]);</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Kết hợp với Repository và Singleton, đây là thứ làm cho code test được. <code>flutter_secure_storage</code> là plugin native, không chạy trong unit test; DI cho phép thay bằng bản lưu trong bộ nhớ.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-mvvm">
+  <div class="meta"><h3>12. MVVM + luồng dữ liệu một chiều</h3><span class="tag arc">Kiến trúc</span></div>
+  <div class="where">Ở: cấu trúc 3 lớp của mỗi feature</div>
+  <table>
+    <tr><th>Vai trò MVVM</th><th>Trong project</th><th>Ví dụ</th></tr>
+    <tr><td><b>Model</b></td><td><code>data/</code></td><td><code>User</code>, <code>TokenPair</code>, <code>AuthRepository</code></td></tr>
+    <tr><td><b>ViewModel</b></td><td><code>application/</code> (Riverpod <code>Notifier</code>)</td><td><code>SessionController</code></td></tr>
+    <tr><td><b>View</b></td><td><code>presentation/</code></td><td><code>LoginScreen</code>, <code>StaffProfileScreen</code></td></tr>
+  </table>
+  <div class="flow">
+    <span class="step">View: người dùng bấm nút</span><span class="to">→</span>
+    <span class="step">gọi hành động trên ViewModel</span><span class="to">→</span>
+    <span class="step">ViewModel gọi Model, cập nhật state</span><span class="to">→</span>
+    <span class="step">View <code>watch</code> state, tự vẽ lại</span>
+  </div>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Dữ liệu chỉ đi <b>một chiều</b>: View không bao giờ tự sửa state. Lỗi dễ lần ra vì chỉ có một nơi đổi state. Logic trong ViewModel không dính widget nên test được bằng unit test thuần.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-dto">
+  <div class="meta"><h3>13. DTO / Immutable Value Object</h3><span class="tag arc">Ứng dụng</span></div>
+  <div class="where">Ở: <code>User</code>, <code>TokenPair</code>, <code>Paged</code>, <code>FieldError</code>, <code>ApiException</code></div>
+  <p><b>Định nghĩa:</b> DTO (Data Transfer Object) là object chỉ mang dữ liệu giữa các tầng. Ở đây chúng còn <b>bất biến</b>: mọi trường là <code>final</code>, constructor <code>const</code>.</p>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>State Riverpod phải bất biến để Observer hoạt động đúng: muốn đổi thì tạo object mới (<code>state = Authenticated(newUser)</code>), Riverpod so sánh object cũ/mới để báo UI. Nếu sửa trực tiếp <code>user.fullName = ...</code> thì UI không biết để vẽ lại.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-guard">
+  <div class="meta"><h3>14. Route Guard</h3><span class="tag arc">Ứng dụng</span></div>
+  <div class="where">Ở: <code>app/router.dart</code> (<code>_redirect</code>, <code>_canAccess</code>)</div>
+  <p><b>Định nghĩa:</b> một "người gác cổng" chạy trước mỗi lần chuyển trang, quyết định cho đi tiếp hay chuyển hướng.</p>
+<pre><code><span class="t">bool</span> _canAccess(<span class="t">UserRole</span> role, <span class="t">String</span> path) {
+  <span class="k">if</span> (path.startsWith(<span class="s">'/admin/'</span>))     <span class="k">return</span> role == <span class="t">UserRole</span>.admin;
+  <span class="k">if</span> (path.startsWith(<span class="s">'/librarian/'</span>)) <span class="k">return</span> role == <span class="t">UserRole</span>.librarian;
+  <span class="k">if</span> (path.startsWith(<span class="s">'/staff/'</span>))     <span class="k">return</span> role.isStaff;
+  ...
+}</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Quyền truy cập nằm <b>một chỗ</b> thay vì mỗi màn tự kiểm tra. Gõ thẳng URL cũng bị chặn. Spec AUTH-02 "không có lối tắt vào app khi chưa đổi mật khẩu" được bảo đảm tại đây.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-singleflight">
+  <div class="meta"><h3>15. Single-flight token refresh</h3><span class="tag arc">Ứng dụng</span></div>
+  <div class="where">Ở: <code>core/network/auth_interceptor.dart</code></div>
+  <p><b>Định nghĩa:</b> khi nhiều tác vụ cùng cần một kết quả đắt (ở đây là token mới), chỉ <b>một</b> tác vụ thực hiện, các tác vụ khác chờ và dùng lại kết quả.</p>
+<pre><code><span class="k">class</span> <span class="t">AuthInterceptor</span> <span class="k">extends</span> <span class="t">QueuedInterceptor</span> {   <span class="c">// xếp hàng lỗi</span>
+  ...
+  <span class="k">final</span> alreadyRefreshed = sentToken != _tokens.accessToken;  <span class="c">// đã có người refresh rồi?</span>
+  <span class="k">if</span> (!alreadyRefreshed &amp;&amp; !<span class="k">await</span> _refreshSession()) { ... }
+}</code></pre>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Backend <b>xoay vòng</b> refresh token: dùng một lần là token cũ hết hiệu lực. Dashboard gọi 3 API cùng lúc khi token vừa hết hạn; nếu cả 3 cùng refresh, 2 cái sau dùng token đã bị thu hồi và người dùng bị đá ra.</dd>
+  </dl>
+</div>
+
+<div class="card pattern" id="p-idempotency">
+  <div class="meta"><h3>16. Idempotency Key</h3><span class="tag arc">Ứng dụng</span><span class="tag stub">chuẩn bị cho LIB-03</span></div>
+  <div class="where">Ở: <code>core/utils/idempotency.dart</code>, <code>ApiException.isOutcomeUncertain</code></div>
+  <p><b>Định nghĩa:</b> gắn một khóa duy nhất cho mỗi thao tác; server thấy cùng khóa thì trả lại kết quả cũ thay vì thực hiện lần nữa. Thao tác trở nên "idempotent": làm một lần hay nhiều lần cho cùng kết quả.</p>
+  <dl>
+    <dt>Vì sao dùng</dt><dd>Thủ thư bấm "Ghi nhận vào", mạng rớt đúng lúc. Không biết server đã ghi chưa. Gửi lại với key mới có thể ghi trùng; với <b>cùng key</b> thì an toàn. Backend hỗ trợ sẵn <code>GET /access/requests/{idempotencyKey}</code>. Spec yêu cầu "không ghi nhận trùng khi thử lại".</dd>
+    <dt>Trạng thái</dt><dd>Hàm tạo key và cờ <code>isOutcomeUncertain</code> đã có; luồng đầy đủ sẽ cài đặt trong LIB-03. Cờ <code>isOutcomeUncertain</code> đã được dùng thật ở form đổi mật khẩu.</dd>
+  </dl>
+</div>
+
+<h3 id="p-not-used">10.6 Pattern chưa áp dụng &amp; lý do</h3>
+<p>Áp dụng pattern không cần thiết làm code khó đọc hơn. Những pattern sau được cân nhắc nhưng <b>chủ động không dùng</b> ở giai đoạn này:</p>
+<table>
+  <tr><th style="width:200px">Pattern</th><th>Lý do chưa dùng</th><th style="width:240px">Khi nào nên dùng</th></tr>
+  <tr><td>Use Case / Interactor (Clean Architecture)</td><td>Mỗi use case chỉ gọi đúng một hàm repository; thêm lớp này chỉ là chuyển tiếp lời gọi</td><td>Khi một thao tác cần phối hợp nhiều repository (ví dụ LIB-03: tra cứu + ghi nhận + kiểm tra kết quả)</td></tr>
+  <tr><td>Builder</td><td>Các object có ít trường, constructor có tham số đặt tên của Dart đã đủ rõ</td><td>Khi tạo bộ lọc phức tạp nhiều điều kiện cho LIB-06</td></tr>
+  <tr><td>Command</td><td>Chưa có thao tác cần hoàn tác (undo) hay xếp hàng</td><td>Có thể biểu diễn mỗi lần "Ghi nhận vào/ra" kèm idempotency key thành một Command để thử lại</td></tr>
+  <tr><td>Decorator cho Repository (cache)</td><td>Dữ liệu vận hành phải luôn mới; spec yêu cầu hiển thị trung thực dữ liệu cũ</td><td>Nếu cần cache cấu hình thư viện (LIB-08) để giảm gọi API</td></tr>
+  <tr><td>Code generation (freezed, json_serializable)</td><td>Thêm bước <code>build_runner</code>, khó hơn cho người mới trong nhóm</td><td>Khi số model vượt khoảng 15–20</td></tr>
+</table>
+
+<div class="callout ok">
+  <strong>Tóm tắt để trình bày</strong>
+  Source code áp dụng <b>9 pattern GoF</b> (Singleton, Factory, Adapter, Facade, Composite, Observer, State, Chain of Responsibility, Strategy) và <b>7 pattern kiến trúc/ứng dụng</b> (Repository, Dependency Injection, MVVM với luồng dữ liệu một chiều, DTO bất biến, Route Guard, Single-flight refresh, Idempotency Key). Hiệu quả được chứng minh bằng 13 test tự động, trong đó 7 test kiểm tra logic phiên đăng nhập mà không cần backend nhờ Repository + DI.
+</div>
+
+<footer>
+  Tài liệu cho <code>LibIOG6/client</code> · Cập nhật 16/10/2026 · Nguồn tham chiếu: <code>DESIGN_SYSTEM.md</code>, <code>docs/api/openapi-mvp.yaml</code>, Figma "Library Access — Complete UI".
+</footer>
+
+</main>
+</body>
+</html>
