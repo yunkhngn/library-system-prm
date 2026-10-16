@@ -1,0 +1,3 @@
+tags:
+  live:
+    # Needs a running backend; see test/live/auth_live_test.dart.
