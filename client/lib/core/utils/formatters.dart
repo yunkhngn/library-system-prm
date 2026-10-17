@@ -49,6 +49,15 @@ abstract final class Fmt {
     return m == 0 ? '$h giờ' : '$h giờ $m phút';
   }
 
+  /// UTC instant of 00:00 (Vietnam time) of the calendar day containing [t].
+  static DateTime startOfVietnamDay(DateTime t) {
+    final vn = toVietnam(t);
+    return DateTime.utc(vn.year, vn.month, vn.day).subtract(_vnOffset);
+  }
+
+  static DateTime startOfNextVietnamDay(DateTime t) =>
+      startOfVietnamDay(t).add(const Duration(days: 1));
+
   /// UTC instant of Monday 00:00 (Vietnam time) of the week containing [t].
   static DateTime startOfVietnamWeek(DateTime t) {
     final vn = toVietnam(t);

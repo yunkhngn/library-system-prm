@@ -50,7 +50,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           _route(Routes.myShifts, const MyShiftsScreen()),
           _route(Routes.libraryRules, const LibraryRulesScreen()),
           _route(Routes.occupants, const OccupantsScreen()),
-          _route(Routes.manualAccess, const ManualAccessScreen()),
+          GoRoute(
+            path: Routes.manualAccess,
+            builder: (_, state) {
+              final q = state.uri.queryParameters;
+              return ManualAccessScreen(
+                userId: q['userId'],
+                visitorId: q['visitorId'],
+                action: q['action'],
+                code: q['code'],
+                name: q['name'],
+              );
+            },
+          ),
           _route(Routes.visitors, const VisitorsScreen()),
           GoRoute(
             path: '${Routes.visitors}/:visitorId',

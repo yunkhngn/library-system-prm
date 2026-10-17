@@ -25,13 +25,16 @@ class RealtimeClient {
 
   void connect() {
     if (_client != null) return;
+    final token = _tokens.accessToken;
     status.value = RealtimeStatus.connecting;
     _client = StompClient(
       config: StompConfig(
         url: Env.wsUrl,
         reconnectDelay: const Duration(seconds: 5),
         beforeConnect: () async => status.value = RealtimeStatus.connecting,
-        stompConnectHeaders: {'Authorization': 'Bearer ${_tokens.accessToken}'},
+        stompConnectHeaders: {
+          if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+        },
         onConnect: (_) => status.value = RealtimeStatus.connected,
         onDisconnect: (_) => status.value = RealtimeStatus.disconnected,
         onWebSocketError: (_) => status.value = RealtimeStatus.disconnected,

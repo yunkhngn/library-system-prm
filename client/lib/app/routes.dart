@@ -17,6 +17,23 @@ abstract final class Routes {
   // Operational screens shared by librarians and administrators.
   static const occupants = '/staff/occupants';
   static const manualAccess = '/staff/manual-access';
+  static String manualAccessFor({
+    String? userId,
+    String? visitorId,
+    String? action,
+    String? code,
+    String? name,
+  }) {
+    final params = <String, String>{
+      if (userId != null) 'userId': userId,
+      if (visitorId != null) 'visitorId': visitorId,
+      if (action != null) 'action': action,
+      if (code != null) 'code': code,
+      if (name != null) 'name': name,
+    };
+    if (params.isEmpty) return manualAccess;
+    return Uri(path: manualAccess, queryParameters: params).toString();
+  }
   static const visitors = '/staff/visitors';
   static String visitorDetail(String id) => '/staff/visitors/$id';
   static const accessHistory = '/staff/history';

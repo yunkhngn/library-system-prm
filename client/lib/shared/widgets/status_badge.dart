@@ -54,6 +54,22 @@ class StatusBadge extends StatelessWidget {
       : label = 'Hôm nay',
         tone = BadgeTone.info,
         icon = Icons.today_outlined;
+  const StatusBadge.student({super.key})
+      : label = 'Sinh viên',
+        tone = BadgeTone.info,
+        icon = Icons.school_outlined;
+  const StatusBadge.visitor({super.key})
+      : label = 'Khách ngoài',
+        tone = BadgeTone.neutral,
+        icon = Icons.badge_outlined;
+  const StatusBadge.open({super.key})
+      : label = 'Đang mở',
+        tone = BadgeTone.success,
+        icon = Icons.login;
+  const StatusBadge.closed({super.key})
+      : label = 'Đã đóng',
+        tone = BadgeTone.neutral,
+        icon = Icons.logout;
 
   final String label;
   final BadgeTone tone;
@@ -82,9 +98,7 @@ class StatusBadge extends StatelessWidget {
             Icon(icon, size: 14, color: fg),
             const SizedBox(width: AppSpacing.xs),
           ],
-          Flexible(
-            child: Text(label, style: AppTypography.caption.copyWith(color: fg, fontWeight: FontWeight.w500)),
-          ),
+          Text(label, style: AppTypography.caption.copyWith(color: fg, fontWeight: FontWeight.w500)),
         ],
       ),
     );
