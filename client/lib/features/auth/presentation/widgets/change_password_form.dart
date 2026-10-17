@@ -10,6 +10,7 @@ import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_text_field.dart';
 import '../../application/password_policy.dart';
 import '../../application/session_controller.dart';
+import 'password_strength_meter.dart';
 
 /// Shared by AUTH-02 (required first change) and AUTH-03 (voluntary change).
 class ChangePasswordForm extends ConsumerStatefulWidget {
@@ -91,12 +92,14 @@ class _ChangePasswordFormState extends ConsumerState<ChangePasswordForm> {
             autofillHints: const [AutofillHints.newPassword],
             validator: (v) => PasswordPolicy.validateNew(v, current: _current.text),
           ),
+          const SizedBox(height: AppSpacing.sm),
+          PasswordStrengthMeter(controller: _new),
           const SizedBox(height: AppSpacing.xs),
           Row(
             children: [
               Expanded(
                 child: Text(
-                  PasswordPolicy.requirement,
+                  PasswordPolicy.byteNote,
                   style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                 ),
               ),
