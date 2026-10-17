@@ -5,7 +5,12 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
 import '../../shared/widgets/app_alert.dart';
 import '../../shared/widgets/app_button.dart';
+import '../../shared/widgets/app_segmented.dart';
 import '../../shared/widgets/app_text_field.dart';
+import '../../shared/widgets/labeled_value.dart';
+import '../../shared/widgets/pagination_bar.dart';
+import '../../shared/widgets/search_field.dart';
+import '../../shared/widgets/side_sheet.dart';
 import '../../shared/widgets/status_badge.dart';
 
 /// `/dev/components` — every shared component, for comparison with Figma P1.
@@ -78,9 +83,12 @@ class ComponentGalleryScreen extends StatelessWidget {
                   StatusBadge.face(),
                   StatusBadge.qr(),
                   StatusBadge.manual(),
+                  StatusBadge.cancelled(),
+                  StatusBadge.today(),
                 ],
               ),
             ]),
+            const _Section('06 Danh sách & điều hướng', [_ListControlsDemo()]),
             const _Section('05 Trường nhập liệu & thông báo', [
               SizedBox(
                 width: 360,
@@ -104,6 +112,75 @@ class ComponentGalleryScreen extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _ListControlsDemo extends StatefulWidget {
+  const _ListControlsDemo();
+
+  @override
+  State<_ListControlsDemo> createState() => _ListControlsDemoState();
+}
+
+class _ListControlsDemoState extends State<_ListControlsDemo> {
+  String _kind = 'all';
+  int _page = 0;
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: AppSpacing.md,
+          runSpacing: AppSpacing.md,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            AppSearchField(
+              hint: 'Tìm theo tên hoặc mã',
+              onChanged: (q) => setState(() => _query = q),
+            ),
+            AppSegmented<String>(
+              segments: const [
+                AppSegment(value: 'all', label: 'Tất cả'),
+                AppSegment(value: 'student', label: 'Sinh viên'),
+                AppSegment(value: 'visitor', label: 'Khách ngoài'),
+              ],
+              selected: _kind,
+              onChanged: (v) => setState(() => _kind = v),
+            ),
+            AppButton(
+              label: 'Mở side sheet',
+              variant: AppButtonVariant.secondary,
+              onPressed: () => showSideSheet(
+                context,
+                title: 'Chi tiết lượt ra vào',
+                builder: (_) => const Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    LabeledValue(label: 'Họ và tên', value: 'Nguyễn Thị Huyền'),
+                    LabeledValue(label: 'Mã', value: 'SV001'),
+                    LabeledValue(label: 'Phương thức vào', child: StatusBadge.qr()),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Text(
+          'Từ khóa (sau debounce): "${_query.isEmpty ? '—' : _query}" · Bộ lọc: $_kind',
+          style: AppTypography.caption,
+        ),
+        PaginationBar(
+          page: _page,
+          size: 20,
+          totalElements: 187,
+          onPageChanged: (p) => setState(() => _page = p),
+        ),
+      ],
     );
   }
 }

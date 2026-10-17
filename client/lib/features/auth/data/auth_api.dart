@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/network/api_call.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/network/api_error.dart';
 import 'auth_repository.dart';
@@ -64,12 +65,6 @@ class AuthApi implements AuthRepository {
   Future<T> _call<T>(
     Future<Response<Map<String, dynamic>>> Function() request,
     T Function(Map<String, dynamic>) parse,
-  ) async {
-    try {
-      final response = await request();
-      return parse(response.data!);
-    } on DioException catch (e) {
-      throw ApiException.fromDio(e);
-    }
-  }
+  ) =>
+      apiCall(request, parse);
 }

@@ -47,6 +47,13 @@ class StatusBadge extends StatelessWidget {
       : label = 'Thủ công',
         tone = BadgeTone.neutral,
         icon = Icons.edit_note_outlined;
+  const StatusBadge.cancelled({super.key, this.label = 'Đã hủy'})
+      : tone = BadgeTone.neutral,
+        icon = Icons.block;
+  const StatusBadge.today({super.key})
+      : label = 'Hôm nay',
+        tone = BadgeTone.info,
+        icon = Icons.today_outlined;
 
   final String label;
   final BadgeTone tone;

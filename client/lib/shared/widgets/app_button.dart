@@ -23,6 +23,7 @@ class AppButton extends StatelessWidget {
     this.variant = AppButtonVariant.primary,
     this.size = AppButtonSize.desktop,
     this.icon,
+    this.trailingIcon,
     this.loading = false,
     this.expand = false,
   });
@@ -32,6 +33,9 @@ class AppButton extends StatelessWidget {
   final AppButtonVariant variant;
   final AppButtonSize size;
   final IconData? icon;
+
+  /// Shown after the label, e.g. a chevron on "Tuần sau".
+  final IconData? trailingIcon;
 
   /// Disables the button and shows a spinner; prevents duplicate submission.
   final bool loading;
@@ -63,6 +67,10 @@ class AppButton extends StatelessWidget {
           Icon(icon, size: 18, color: fg),
         if (loading || icon != null) const SizedBox(width: AppSpacing.sm),
         Flexible(child: Text(label, style: textStyle, textAlign: TextAlign.center)),
+        if (trailingIcon != null) ...[
+          const SizedBox(width: AppSpacing.sm),
+          Icon(trailingIcon, size: 18, color: fg),
+        ],
       ],
     );
 
