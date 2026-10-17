@@ -27,4 +27,5 @@ abstract final class AppSizes {
 
   static const sidebarWidth = 264.0;
   static const desktopBreakpoint = 1024.0;
+  static const compactBreakpoint = 600.0;
 }

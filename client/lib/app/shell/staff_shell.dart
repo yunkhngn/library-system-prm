@@ -38,8 +38,12 @@ class StaffShell extends ConsumerWidget {
               Expanded(
                 child: Column(
                   children: [
-                    _TopBar(user: user, showMenuButton: !wide),
-                    Expanded(child: child),
+                    _TopBar(
+                      user: user,
+                      showMenuButton: !wide,
+                      compact: constraints.maxWidth < AppSizes.compactBreakpoint,
+                    ),
+                    Expanded(child: SafeArea(top: false, child: child)),
                   ],
                 ),
               ),
@@ -59,7 +63,7 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
+    return Material(
       color: AppColors.navy,
       child: SafeArea(
         child: Column(
@@ -124,70 +128,120 @@ class _NavTile extends StatelessWidget {
 }
 
 class _TopBar extends ConsumerWidget {
-  const _TopBar({required this.user, required this.showMenuButton});
+  const _TopBar({required this.user, required this.showMenuButton, required this.compact});
 
   final User user;
   final bool showMenuButton;
 
+  /// Phone widths: only the avatar is shown, the name moves into the menu.
+  final bool compact;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+    return DecoratedBox(
       decoration: const BoxDecoration(
         color: AppColors.surface,
         border: Border(bottom: BorderSide(color: AppColors.border)),
       ),
-      child: Row(
-        children: [
-          if (showMenuButton)
-            IconButton(
-              tooltip: 'Mở menu',
-              icon: const Icon(Icons.menu),
-              onPressed: () => Scaffold.of(context).openDrawer(),
-            ),
-          const Spacer(),
-          PopupMenuButton<String>(
-            tooltip: 'Tài khoản',
-            position: PopupMenuPosition.under,
-            onSelected: (value) {
-              switch (value) {
-                case 'profile':
-                  context.go(Routes.staffProfile);
-                case 'password':
-                  context.go(Routes.changePassword);
-                default:
-                  confirmLogout(context, ref);
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'profile', child: Text('Hồ sơ tài khoản')),
-              PopupMenuItem(value: 'password', child: Text('Đổi mật khẩu')),
-              PopupMenuDivider(),
-              PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
+      child: SafeArea(
+        bottom: false,
+        child: Container(
+          height: 64,
+          padding: EdgeInsets.symmetric(horizontal: compact ? AppSpacing.sm : AppSpacing.lg),
+          child: _buildRow(context, ref),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRow(BuildContext context, WidgetRef ref) {
+    return Row(
+      children: [
+        if (showMenuButton)
+          IconButton(
+            tooltip: 'Mở menu',
+            icon: const Icon(Icons.menu),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        const Spacer(),
+        PopupMenuButton<String>(
+          tooltip: 'Tài khoản',
+          position: PopupMenuPosition.under,
+          onSelected: (value) {
+            switch (value) {
+              case 'profile':
+                context.go(Routes.staffProfile);
+              case 'password':
+                context.go(Routes.changePassword);
+              default:
+                confirmLogout(context, ref);
+            }
+          },
+          itemBuilder: (_) => [
+            if (compact) ...[
+              PopupMenuItem(
+                enabled: false,
+                child: _UserLabel(user: user),
+              ),
+              const PopupMenuDivider(),
             ],
+            const PopupMenuItem(value: 'profile', child: Text('Hồ sơ tài khoản')),
+            const PopupMenuItem(value: 'password', child: Text('Đổi mật khẩu')),
+            const PopupMenuDivider(),
+            const PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
+          ],
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.navy,
-                  child: Text(user.initials, style: AppTypography.caption.copyWith(color: Colors.white)),
+                  child: Text(user.initials,
+                      style: AppTypography.caption.copyWith(color: Colors.white)),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(user.fullName, style: AppTypography.label),
-                    Text(user.role.label, style: AppTypography.caption),
-                  ],
-                ),
+                if (!compact) ...[
+                  const SizedBox(width: AppSpacing.sm),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 200),
+                    child: _UserLabel(user: user),
+                  ),
+                ],
                 const Icon(Icons.expand_more, color: AppColors.textSecondary),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UserLabel extends StatelessWidget {
+  const _UserLabel({required this.user});
+
+  final User user;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          user.fullName,
+          style: AppTypography.label.copyWith(color: AppColors.textPrimary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          user.role.label,
+          style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 }
