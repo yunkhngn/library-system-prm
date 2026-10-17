@@ -2,6 +2,7 @@
 /docs/*
 !/docs/backend-ai-spec.md
 !/docs/yeu-cau-bo-sung.md
+!/docs/client-source-guide.html
 !/docs/api/
 !/docs/deliverables/
 /docs/deliverables/*

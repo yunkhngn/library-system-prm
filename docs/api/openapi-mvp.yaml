@@ -341,6 +341,41 @@ components:
       - isInside
       - currentSession
       - asOf
+    StudentLookup:
+      type: object
+      additionalProperties: false
+      description: Minimal student card for staff manual access (LIB-03). Omits email and biometric data.
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+          example: SV002
+        fullName:
+          type: string
+          example: Trần Minh Quân
+        status:
+          type: string
+          enum:
+          - ACTIVE
+          - LOCKED
+        isInside:
+          type: boolean
+        currentSessionId:
+          type: string
+          format: uuid
+          nullable: true
+        checkInTime:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - id
+      - code
+      - fullName
+      - status
+      - isInside
     Actor:
       type: object
       additionalProperties: false
@@ -3885,6 +3920,74 @@ paths:
               $ref: '#/components/schemas/QrAccessRequest'
             example:
               token: example-token-not-a-real-credential
+  /api/v1/students/lookup:
+    get:
+      operationId: lookupStudent
+      tags:
+      - Access
+      summary: Look up a student by account code
+      description: Resolves a student code (e.g. SV002) to the id required by POST /access/manual, with account
+        status and current presence. Non-student accounts return 404. Email and biometric fields are never returned.
+      security:
+      - bearerAuth: []
+      x-roles:
+      - LIBRARIAN
+      - ADMIN
+      x-task: 6
+      x-retry-policy: READ_SAFE
+      x-error-codes:
+        '400':
+        - INVALID_REQUEST
+        - INVALID_JSON
+        - INVALID_QUERY
+        - UNKNOWN_FIELD
+        - MISSING_PARAMETER
+        '401':
+        - UNAUTHENTICATED
+        - TOKEN_EXPIRED
+        - TOKEN_REVOKED
+        '403':
+        - FORBIDDEN
+        - ACCOUNT_LOCKED
+        - PASSWORD_CHANGE_REQUIRED
+        - INVALID_TOKEN_PURPOSE
+        '404':
+        - RESOURCE_NOT_FOUND
+        '429': *id021
+        '500': *id022
+      x-acceptance-tests:
+      - Librarian lookup of a student code returns id, name, status and isInside.
+      - After a manual check-in, isInside is true and currentSessionId matches the new session.
+      - Staff codes and unknown codes both return 404 RESOURCE_NOT_FOUND.
+      - Students and anonymous callers cannot use the endpoint.
+      parameters:
+      - name: code
+        in: query
+        required: true
+        description: Student account code; trimmed and compared case-insensitively.
+        schema:
+          type: string
+          minLength: 1
+          example: SV002
+      responses:
+        '200':
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StudentLookup'
+        '400':
+          $ref: '#/components/responses/Error400'
+        '401':
+          $ref: '#/components/responses/Error401'
+        '403':
+          $ref: '#/components/responses/Error403'
+        '404':
+          $ref: '#/components/responses/Error404'
+        '429':
+          $ref: '#/components/responses/Error429'
+        '500':
+          $ref: '#/components/responses/Error500'
   /api/v1/access/manual:
     post:
       operationId: recordManualAccess

@@ -460,6 +460,30 @@ public class AccessService {
     }
 
     @Transactional(readOnly = true)
+    public StudentLookup lookupStudent(String code) {
+        String normalized = code != null ? code.trim().toUpperCase() : "";
+        if (normalized.isEmpty()) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "INVALID_QUERY", "code must not be blank");
+        }
+
+        // Staff accounts are reported as not found so the endpoint cannot enumerate them.
+        User student = userRepository.findByCode(normalized)
+                .filter(u -> "STUDENT".equalsIgnoreCase(u.getRole()))
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "RESOURCE_NOT_FOUND", "Student not found"));
+
+        Optional<CheckinLog> openSession = checkinLogRepository.findByUserIdAndCheckOutTimeIsNull(student.getId());
+        return new StudentLookup(
+                student.getId(),
+                student.getCode(),
+                student.getFullName(),
+                student.getStatus(),
+                openSession.isPresent(),
+                openSession.map(CheckinLog::getId).orElse(null),
+                openSession.map(CheckinLog::getCheckInTime).orElse(null)
+        );
+    }
+
+    @Transactional(readOnly = true)
     public AccessStatus getMyAccessStatus(UUID studentId) {
         OffsetDateTime now = OffsetDateTime.now();
         Optional<CheckinLog> openSession = checkinLogRepository.findByUserIdAndCheckOutTimeIsNull(studentId);

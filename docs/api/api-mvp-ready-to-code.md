@@ -50,6 +50,7 @@ Coverage includes the document requirements and additions: **54 backend HTTP ope
 | Backend | POST | `/api/v1/kiosks/heartbeat` | KIOSK | HeartbeatRequest → HeartbeatResult (200) | 4 |
 | Backend | GET | `/api/v1/kiosks/me/config` | KIOSK | — → KioskRuntimeConfig (200) | 4 |
 | Backend | POST | `/api/v1/access/qr` | KIOSK | QrAccessRequest → AccessResult (200) | 5 |
+| Backend | GET | `/api/v1/students/lookup` | LIBRARIAN, ADMIN | `code` → StudentLookup (200) | 6 |
 | Backend | POST | `/api/v1/access/manual` | LIBRARIAN, ADMIN | ManualAccessRequest → AccessResult (200) | 6 |
 | Backend | GET | `/api/v1/access/requests/{idempotencyKey}` | LIBRARIAN, ADMIN, KIOSK | — → AccessRequestStatus (200) | 5 |
 | Backend | GET | `/api/v1/access-history` | LIBRARIAN, ADMIN | — → AccessSessionPage (200) | 6 |
@@ -668,6 +669,34 @@ Required tests:
 - Retry does not toggle state.
 - Concurrent kiosks produce only one effect.
 - A rolled-back QR is not consumed.
+
+### GET /api/v1/students/lookup
+
+Operation: `lookupStudent` · Host: Backend · Permissions: LIBRARIAN, ADMIN · Task 6 · Retry: `READ_SAFE`.
+
+Resolves a student account code (e.g. `SV002`) to the `userId` required by `POST /access/manual`, plus account status and current presence. Used by LIB-03 when the student is not already in `/occupancy/people`. Codes are trimmed and uppercased. Non-student accounts (staff/admin) return the same 404 as unknown codes so the endpoint cannot enumerate staff. Email and biometric fields are never returned. Locked students are returned with `status=LOCKED` so the UI can explain why check-in will be refused.
+
+| Location | Name | Required | Type / limits |
+|---|---|---|---|
+| query | `code` | Yes | type="string", minLength=1, example=`SV002` |
+
+Success 200: [StudentLookup](#studentlookup).
+
+Applicable errors:
+
+- 400: `INVALID_REQUEST`, `INVALID_QUERY`, `MISSING_PARAMETER`.
+- 401: `UNAUTHENTICATED`, `TOKEN_EXPIRED`, `TOKEN_REVOKED`.
+- 403: `FORBIDDEN`, `ACCOUNT_LOCKED`, `PASSWORD_CHANGE_REQUIRED`, `INVALID_TOKEN_PURPOSE`.
+- 404: `RESOURCE_NOT_FOUND`.
+- 429: `RATE_LIMITED`.
+- 500: `INTERNAL_ERROR`.
+
+Required tests:
+
+- Librarian lookup of `SV002` returns id, name, status and `isInside`.
+- After a manual check-in, `isInside` is true and `currentSessionId` matches the new session.
+- `LIB001` / unknown codes return 404 `RESOURCE_NOT_FOUND`.
+- Students and anonymous callers cannot use the endpoint.
 
 ### POST /api/v1/access/manual
 

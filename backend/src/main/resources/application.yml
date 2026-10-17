@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: checkin-backend
+  profiles:
+    default: dev
 
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/library_db}

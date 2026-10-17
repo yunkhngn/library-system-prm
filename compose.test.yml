@@ -61,6 +61,7 @@ services:
       - AI_SERVICE_KEY=dev_ai_internal_service_key_change_in_prod
       - JWT_SECRET=super_secret_jwt_key_at_least_32_characters_long_123456
       - DEV_SEED_PASSWORD=dev_secret_password_123
+      - APP_DEV_SAMPLE_USERS=false
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep UP || exit 1"]
       interval: 5s
