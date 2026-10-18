@@ -25,7 +25,7 @@ abstract final class AppSizes {
   static const controlMobile = 48.0;
   static const controlKiosk = 64.0;
 
-  static const sidebarWidth = 264.0;
+  static const sidebarWidth = 248.0;
   static const desktopBreakpoint = 1024.0;
   static const compactBreakpoint = 600.0;
 }

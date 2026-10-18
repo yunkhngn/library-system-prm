@@ -11,8 +11,6 @@ import '../../features/auth/presentation/logout_dialog.dart';
 import '../routes.dart';
 import 'staff_nav.dart';
 
-/// Desktop shell for librarians and administrators: navy sidebar + top bar.
-/// Below [AppSizes.desktopBreakpoint] the sidebar moves into a drawer.
 class StaffShell extends ConsumerWidget {
   const StaffShell({super.key, required this.child});
 
@@ -22,36 +20,38 @@ class StaffShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionControllerProvider);
     if (session is! Authenticated) return const SizedBox.shrink();
-
-    final user = session.user;
     final location = GoRouterState.of(context).uri.path;
-    final sidebar = _Sidebar(items: staffNavFor(user.role), location: location);
+    final items = staffNavFor(session.user.role);
+    final sidebar = _Sidebar(items: items, location: location);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final wide = constraints.maxWidth >= AppSizes.desktopBreakpoint;
-        return Scaffold(
-          drawer: wide ? null : Drawer(width: AppSizes.sidebarWidth, child: sidebar),
-          body: Row(
-            children: [
-              if (wide) SizedBox(width: AppSizes.sidebarWidth, child: sidebar),
-              Expanded(
-                child: Column(
-                  children: [
-                    _TopBar(
-                      user: user,
-                      showMenuButton: !wide,
-                      compact: constraints.maxWidth < AppSizes.compactBreakpoint,
-                    ),
-                    Expanded(child: SafeArea(top: false, child: child)),
-                  ],
-                ),
+    return LayoutBuilder(builder: (context, constraints) {
+      final wide = constraints.maxWidth >= AppSizes.desktopBreakpoint;
+      return Scaffold(
+        drawer:
+            wide ? null : Drawer(width: AppSizes.sidebarWidth, child: sidebar),
+        body: Row(children: [
+          if (wide) SizedBox(width: AppSizes.sidebarWidth, child: sidebar),
+          Expanded(
+            child: Column(children: [
+              _TopBar(
+                user: session.user,
+                title: _titleFor(items, location),
+                showMenuButton: !wide,
+                compact: constraints.maxWidth < AppSizes.compactBreakpoint,
               ),
-            ],
+              Expanded(child: SafeArea(top: false, child: child)),
+            ]),
           ),
-        );
-      },
-    );
+        ]),
+      );
+    });
+  }
+
+  String _titleFor(List<StaffNavItem> items, String location) {
+    for (final item in items) {
+      if (location.startsWith(item.route)) return item.label;
+    }
+    return 'Library Access';
   }
 }
 
@@ -62,186 +62,160 @@ class _Sidebar extends StatelessWidget {
   final String location;
 
   @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: AppColors.navy,
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+  Widget build(BuildContext context) => Material(
+        color: AppColors.navy,
+        child: SafeArea(
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Library Access', style: AppTypography.h3.copyWith(color: Colors.white)),
-                  Text(
-                    'Hệ thống ghi nhận ra vào thư viện',
-                    style: AppTypography.caption.copyWith(color: Colors.white70),
+              padding: const EdgeInsets.fromLTRB(22, 20, 12, 22),
+              child: Row(children: [
+                const Icon(Icons.stop_circle_outlined,
+                    size: 15, color: Colors.white),
+                const SizedBox(width: 8),
+                Text(
+                  'Library Access',
+                  style: AppTypography.h3.copyWith(
+                    color: Colors.white,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
                   ),
-                ],
-              ),
+                ),
+              ]),
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 children: [
-                  for (final item in items)
-                    _NavTile(item: item, selected: location.startsWith(item.route)),
+                  for (var i = 0; i < items.length; i++) ...[
+                    if (items.length > 8 && i == 5) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(14, 18, 14, 8),
+                        child: Text(
+                          'Quản trị',
+                          style: AppTypography.caption
+                              .copyWith(color: const Color(0xFFB6C7DA)),
+                        ),
+                      ),
+                    ],
+                    _NavTile(
+                        item: items[i],
+                        selected: location.startsWith(items[i].route)),
+                  ],
                 ],
               ),
             ),
-          ],
+          ]),
         ),
-      ),
-    );
-  }
+      );
 }
 
 class _NavTile extends StatelessWidget {
   const _NavTile({required this.item, required this.selected});
-
   final StaffNavItem item;
   final bool selected;
 
   @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-      child: ListTile(
-        dense: true,
-        selected: selected,
-        selectedTileColor: Colors.white.withValues(alpha: 0.12),
-        shape: const RoundedRectangleBorder(borderRadius: AppRadius.controlBorder),
-        leading: Icon(item.icon, size: 20, color: selected ? Colors.white : Colors.white70),
-        title: Text(
-          item.label,
-          style: AppTypography.label.copyWith(color: selected ? Colors.white : Colors.white70),
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: SizedBox(
+          height: 36,
+          child: ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            selected: selected,
+            selectedTileColor: const Color(0xFF2C537A),
+            shape: const RoundedRectangleBorder(
+                borderRadius: AppRadius.controlBorder),
+            leading: Icon(item.icon, size: 18, color: Colors.white),
+            title: Text(
+              item.label,
+              style: AppTypography.caption.copyWith(
+                color: Colors.white,
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+            onTap: () {
+              Scaffold.maybeOf(context)?.closeDrawer();
+              context.go(item.route);
+            },
+          ),
         ),
-        onTap: () {
-          Scaffold.maybeOf(context)?.closeDrawer();
-          context.go(item.route);
-        },
-      ),
-    );
-  }
+      );
 }
 
 class _TopBar extends ConsumerWidget {
-  const _TopBar({required this.user, required this.showMenuButton, required this.compact});
+  const _TopBar(
+      {required this.user,
+      required this.title,
+      required this.showMenuButton,
+      required this.compact});
 
   final User user;
+  final String title;
   final bool showMenuButton;
-
-  /// Phone widths: only the avatar is shown, the name moves into the menu.
   final bool compact;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-      ),
-      child: SafeArea(
-        bottom: false,
-        child: Container(
-          height: 64,
-          padding: EdgeInsets.symmetric(horizontal: compact ? AppSpacing.sm : AppSpacing.lg),
-          child: _buildRow(context, ref),
+  Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          border: Border(bottom: BorderSide(color: AppColors.border)),
         ),
-      ),
-    );
-  }
-
-  Widget _buildRow(BuildContext context, WidgetRef ref) {
-    return Row(
-      children: [
-        if (showMenuButton)
-          IconButton(
-            tooltip: 'Mở menu',
-            icon: const Icon(Icons.menu),
-            onPressed: () => Scaffold.of(context).openDrawer(),
-          ),
-        const Spacer(),
-        PopupMenuButton<String>(
-          tooltip: 'Tài khoản',
-          position: PopupMenuPosition.under,
-          onSelected: (value) {
-            switch (value) {
-              case 'profile':
-                context.go(Routes.staffProfile);
-              case 'password':
-                context.go(Routes.changePassword);
-              default:
-                confirmLogout(context, ref);
-            }
-          },
-          itemBuilder: (_) => [
-            if (compact) ...[
-              PopupMenuItem(
-                enabled: false,
-                child: _UserLabel(user: user),
-              ),
-              const PopupMenuDivider(),
-            ],
-            const PopupMenuItem(value: 'profile', child: Text('Hồ sơ tài khoản')),
-            const PopupMenuItem(value: 'password', child: Text('Đổi mật khẩu')),
-            const PopupMenuDivider(),
-            const PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
-          ],
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 16,
-                  backgroundColor: AppColors.navy,
-                  child: Text(user.initials,
-                      style: AppTypography.caption.copyWith(color: Colors.white)),
-                ),
-                if (!compact) ...[
-                  const SizedBox(width: AppSpacing.sm),
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 200),
-                    child: _UserLabel(user: user),
+        child: SafeArea(
+          bottom: false,
+          child: SizedBox(
+            height: 64,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: compact ? 12 : 28),
+              child: Row(children: [
+                if (showMenuButton)
+                  IconButton(
+                    tooltip: 'Mở menu',
+                    icon: const Icon(Icons.menu),
+                    onPressed: () => Scaffold.of(context).openDrawer(),
                   ),
-                ],
-                const Icon(Icons.expand_more, color: AppColors.textSecondary),
-              ],
+                if (!compact)
+                  Text(title, style: AppTypography.h3.copyWith(fontSize: 20)),
+                const Spacer(),
+                PopupMenuButton<String>(
+                  tooltip: 'Tài khoản',
+                  position: PopupMenuPosition.under,
+                  onSelected: (value) {
+                    if (value == 'profile') context.go(Routes.staffProfile);
+                    if (value == 'password') context.go(Routes.changePassword);
+                    if (value == 'logout') confirmLogout(context, ref);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(
+                        value: 'profile', child: Text('Hồ sơ tài khoản')),
+                    PopupMenuItem(
+                        value: 'password', child: Text('Đổi mật khẩu')),
+                    PopupMenuDivider(),
+                    PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
+                  ],
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    CircleAvatar(
+                      radius: 15,
+                      backgroundColor: AppColors.infoSurface,
+                      child: Text(user.initials,
+                          style: AppTypography.caption
+                              .copyWith(color: AppColors.navy)),
+                    ),
+                    if (!compact) ...[
+                      const SizedBox(width: 8),
+                      Text(
+                        '${user.fullName} · ${user.role.label}',
+                        style: AppTypography.caption
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ]),
+                ),
+              ]),
             ),
           ),
         ),
-      ],
-    );
-  }
-}
-
-class _UserLabel extends StatelessWidget {
-  const _UserLabel({required this.user});
-
-  final User user;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          user.fullName,
-          style: AppTypography.label.copyWith(color: AppColors.textPrimary),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          user.role.label,
-          style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
-    );
-  }
+      );
 }

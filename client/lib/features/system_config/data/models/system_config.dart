@@ -29,6 +29,10 @@ class SystemConfig {
     required this.scanCooldownSeconds,
     required this.version,
     required this.updatedAt,
+    this.faceModelVersion,
+    this.faceMaxCosineDistance,
+    this.faceMinDistanceGap,
+    this.livenessMinScore,
   });
 
   factory SystemConfig.fromJson(Map<String, dynamic> json) => SystemConfig(
@@ -43,6 +47,10 @@ class SystemConfig {
         scanCooldownSeconds: (json['scanCooldownSeconds'] as num).toInt(),
         version: (json['version'] as num).toInt(),
         updatedAt: json['updatedAt'] == null ? null : DateTime.parse(json['updatedAt'] as String),
+        faceModelVersion: json['faceModelVersion'] as String?,
+        faceMaxCosineDistance: (json['faceMaxCosineDistance'] as num?)?.toDouble(),
+        faceMinDistanceGap: (json['faceMinDistanceGap'] as num?)?.toDouble(),
+        livenessMinScore: (json['livenessMinScore'] as num?)?.toDouble(),
       );
 
   final String timezone;
@@ -58,6 +66,10 @@ class SystemConfig {
   final int scanCooldownSeconds;
   final int version;
   final DateTime? updatedAt;
+  final String? faceModelVersion;
+  final double? faceMaxCosineDistance;
+  final double? faceMinDistanceGap;
+  final double? livenessMinScore;
 
   int get nearCapacityThreshold => (maxCapacity * nearCapacityRatio).ceil();
 

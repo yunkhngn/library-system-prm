@@ -222,6 +222,12 @@ class ShiftIT {
                 .andExpect(jsonPath("$.items.length()").value(1))
                 .andExpect(jsonPath("$.items[0].name").value("Early Shift"));
 
+        // Omitting q must not bind a null value into the LOWER/LIKE expression.
+        mockMvc.perform(get("/api/v1/shifts")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items.length()").value(2));
+
         // Invalid time range (to <= from) -> 422
         mockMvc.perform(get("/api/v1/shifts")
                         .header("Authorization", "Bearer " + adminToken)

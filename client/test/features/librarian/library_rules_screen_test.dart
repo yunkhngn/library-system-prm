@@ -19,6 +19,13 @@ class _FakeConfigRepository implements SystemConfigRepository {
     if (r is SystemConfig) return r;
     throw r;
   }
+
+  @override
+  Future<SystemConfig> update(Map<String, dynamic> patch) async {
+    final r = result;
+    if (r is SystemConfig) return r;
+    throw r;
+  }
 }
 
 SystemConfig _config({int? maxStay, bool enforce = false}) => SystemConfig(

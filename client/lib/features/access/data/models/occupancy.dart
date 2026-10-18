@@ -26,6 +26,10 @@ class Occupancy {
 
   int get remaining => (maxCapacity - count).clamp(0, maxCapacity);
   double get ratio => maxCapacity == 0 ? 0 : count / maxCapacity;
+
+  /// The occupancy endpoint exposes whether the warning threshold is reached,
+  /// but not the configured ratio. The operational default is 90%.
+  int get nearCapacityThreshold => (maxCapacity * 0.9).ceil();
 }
 
 class OccupancyEvent {
