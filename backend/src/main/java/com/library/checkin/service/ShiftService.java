@@ -78,10 +78,12 @@ public class ShiftService {
         Sort sort = parseShiftSort(sortStr);
         String trimmedQ = (q != null && !q.trim().isBlank()) ? q.trim() : null;
 
-        Page<Shift> shiftPage = shiftRepository.findShifts(
-                effectiveFrom, effectiveTo, effectiveStatus, trimmedQ, staffId,
-                PageRequest.of(page, size, sort)
-        );
+        PageRequest pageable = PageRequest.of(page, size, sort);
+        Page<Shift> shiftPage = trimmedQ == null
+                ? shiftRepository.findShiftsWithoutNameFilter(
+                        effectiveFrom, effectiveTo, effectiveStatus, staffId, pageable)
+                : shiftRepository.findShifts(
+                        effectiveFrom, effectiveTo, effectiveStatus, trimmedQ, staffId, pageable);
 
         List<UUID> shiftIds = shiftPage.getContent().stream().map(Shift::getId).toList();
         Map<UUID, Long> countMap = getActiveAssignmentCounts(shiftIds);

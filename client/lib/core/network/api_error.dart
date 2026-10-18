@@ -22,7 +22,7 @@ class ApiException implements Exception {
   const ApiException({
     required this.code,
     this.statusCode,
-    this.message,
+    this.message = '',
     this.fieldErrors = const [],
     this.traceId,
   });
@@ -46,7 +46,7 @@ class ApiException implements Exception {
       return ApiException(
         code: data['code'] as String,
         statusCode: e.response?.statusCode,
-        message: data['message'] as String?,
+        message: data['message'] as String? ?? '',
         fieldErrors: (data['fieldErrors'] as List<dynamic>? ?? [])
             .map((f) => FieldError.fromJson(f as Map<String, dynamic>))
             .toList(),
@@ -58,7 +58,7 @@ class ApiException implements Exception {
 
   final String code;
   final int? statusCode;
-  final String? message;
+  final String message;
   final List<FieldError> fieldErrors;
   final String? traceId;
 
@@ -98,6 +98,7 @@ class ApiException implements Exception {
     'IDEMPOTENCY_KEY_REQUIRED': 'Thiếu khóa xác nhận yêu cầu. Vui lòng thử lại.',
     'INVALID_QUERY': 'Bộ lọc không hợp lệ. Vui lòng kiểm tra lại.',
     'INVALID_REQUEST': 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.',
+    'INVALID_TIME_RANGE': 'Thời gian kết thúc ca trực phải sau thời gian bắt đầu.',
     'REQUEST_IN_PROGRESS': 'Yêu cầu đang được xử lý. Vui lòng chờ.',
     'DB_UNAVAILABLE': 'Hệ thống đang tạm thời gián đoạn. Vui lòng thử lại sau.',
     'INTERNAL_ERROR': 'Hệ thống gặp sự cố. Vui lòng thử lại sau.',
