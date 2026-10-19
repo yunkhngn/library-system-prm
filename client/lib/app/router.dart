@@ -12,6 +12,8 @@ import '../features/auth/presentation/session_status_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/staff_profile_screen.dart';
 import '../features/dev/component_gallery_screen.dart';
+import '../features/student/presentation/student_home_screen.dart';
+import '../features/student/presentation/student_shell.dart';
 import '../features/admin/presentation/accounts_screen.dart';
 import '../features/admin/presentation/admin_overview_screen.dart';
 import '../features/admin/presentation/analytics_screen.dart';
@@ -96,7 +98,27 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // P3–P4 student and P10–P11 kiosk own their shells.
-      _route(Routes.studentHome, const _Standalone('STU-01', 'Trang chủ')),
+      ShellRoute(
+        builder: (_, __, child) => StudentShell(child: child),
+        routes: [
+          _route(Routes.studentHome, const StudentHomeScreen()),
+          _route(Routes.studentQr, const PlaceholderPage(screenId: 'STU-02', title: 'Mã QR cá nhân')),
+          _route(
+              Routes.studentHistory,
+              const PlaceholderPage(
+                  screenId: 'STU-03', title: 'Lịch sử ra vào')),
+          GoRoute(
+              path: '${Routes.studentHistory}/:sessionId',
+              builder: (_, __) => const PlaceholderPage(
+                  screenId: 'STU-04', title: 'Chi tiết lượt ra vào')),
+          _route(Routes.studentAccount,
+              const PlaceholderPage(screenId: 'STU-05', title: 'Tài khoản')),
+          _route(
+              Routes.studentFace,
+              const PlaceholderPage(
+                  screenId: 'STU-06', title: 'Nhận diện khuôn mặt')),
+        ],
+      ),
       _route(Routes.kiosk, const _Standalone('KSK-02', 'Kiosk sẵn sàng')),
     ],
   );

@@ -34,6 +34,7 @@ abstract final class Routes {
     if (params.isEmpty) return manualAccess;
     return Uri(path: manualAccess, queryParameters: params).toString();
   }
+
   static const visitors = '/staff/visitors';
   static String visitorDetail(String id) => '/staff/visitors/$id';
   static const accessHistory = '/staff/history';
@@ -50,6 +51,12 @@ abstract final class Routes {
 
   // Student (P3–P4) and kiosk (P10–P11).
   static const studentHome = '/student/home';
+  static const studentQr = '/student/qr';
+  static const studentHistory = '/student/history';
+  static String studentHistoryDetail(String id) =>
+      '$studentHistory/${Uri.encodeComponent(id)}';
+  static const studentAccount = '/student/account';
+  static const studentFace = '/student/face';
   static const kiosk = '/kiosk';
 
   static String homeFor(UserRole role) => switch (role) {

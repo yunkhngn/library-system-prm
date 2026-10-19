@@ -7,6 +7,7 @@ import '../../core/theme/app_typography.dart';
 enum AppButtonVariant { primary, secondary, ghost, destructive, link }
 
 enum AppButtonSize {
+  compact(32),
   desktop(AppSizes.controlDesktop),
   mobile(AppSizes.controlMobile),
   kiosk(AppSizes.controlKiosk);
@@ -26,6 +27,7 @@ class AppButton extends StatelessWidget {
     this.trailingIcon,
     this.loading = false,
     this.expand = false,
+    this.alignment = MainAxisAlignment.center,
   });
 
   final String label;
@@ -40,23 +42,41 @@ class AppButton extends StatelessWidget {
   /// Disables the button and shows a spinner; prevents duplicate submission.
   final bool loading;
   final bool expand;
+  final MainAxisAlignment alignment;
 
   @override
   Widget build(BuildContext context) {
     final (bg, fg, border) = switch (variant) {
       AppButtonVariant.primary => (AppColors.action, Colors.white, null),
-      AppButtonVariant.secondary => (AppColors.surface, AppColors.textPrimary, AppColors.border),
-      AppButtonVariant.ghost => (Colors.transparent, AppColors.textPrimary, null),
+      AppButtonVariant.secondary => (
+          AppColors.surface,
+          AppColors.textPrimary,
+          AppColors.border
+        ),
+      AppButtonVariant.ghost => (
+          Colors.transparent,
+          AppColors.textPrimary,
+          null
+        ),
       AppButtonVariant.destructive => (AppColors.error, Colors.white, null),
       AppButtonVariant.link => (Colors.transparent, AppColors.action, null),
     };
 
-    final textStyle = (size == AppButtonSize.kiosk ? AppTypography.h3 : AppTypography.label)
-        .copyWith(color: fg, decoration: variant == AppButtonVariant.link ? TextDecoration.underline : null);
+    final textStyle = (size == AppButtonSize.kiosk
+            ? AppTypography.h3
+            : size == AppButtonSize.compact
+                ? AppTypography.caption.copyWith(
+                    fontWeight: FontWeight.w500, color: AppColors.textPrimary)
+                : AppTypography.label)
+        .copyWith(
+            color: fg,
+            decoration: variant == AppButtonVariant.link
+                ? TextDecoration.underline
+                : null);
 
     final child = Row(
       mainAxisSize: expand ? MainAxisSize.max : MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: alignment,
       children: [
         if (loading)
           SizedBox.square(
@@ -66,7 +86,8 @@ class AppButton extends StatelessWidget {
         else if (icon != null)
           Icon(icon, size: 18, color: fg),
         if (loading || icon != null) const SizedBox(width: AppSpacing.sm),
-        Flexible(child: Text(label, style: textStyle, textAlign: TextAlign.center)),
+        Flexible(
+            child: Text(label, style: textStyle, textAlign: TextAlign.center)),
         if (trailingIcon != null) ...[
           const SizedBox(width: AppSpacing.sm),
           Icon(trailingIcon, size: 18, color: fg),
@@ -82,7 +103,8 @@ class AppButton extends StatelessWidget {
         style: TextButton.styleFrom(
           backgroundColor: bg,
           foregroundColor: fg,
-          disabledBackgroundColor: bg == Colors.transparent ? null : bg.withValues(alpha: 0.5),
+          disabledBackgroundColor:
+              bg == Colors.transparent ? null : bg.withValues(alpha: 0.5),
           disabledForegroundColor: fg.withValues(alpha: 0.7),
           padding: EdgeInsets.symmetric(
             horizontal: variant == AppButtonVariant.link ? 0 : AppSpacing.md,
