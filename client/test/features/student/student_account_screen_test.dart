@@ -106,6 +106,9 @@ Future<ProviderContainer> _pump(WidgetTester tester, _Auth auth, _Tokens tokens,
       GoRoute(
           path: Routes.studentFace,
           builder: (_, __) => const Text('Quản lý khuôn mặt')),
+      GoRoute(
+          path: Routes.studentRules,
+          builder: (_, __) => const Text('Nội dung quy định thư viện')),
     ]),
   ]);
   addTearDown(router.dispose);
@@ -162,6 +165,14 @@ void main() {
         image.dispose();
       });
     }
+  });
+
+  testWidgets('STU-05 opens library rules', (tester) async {
+    await _pump(tester, _Auth(), _Tokens());
+    await tester.ensureVisible(find.text('Quy định thư viện'));
+    await tester.tap(find.text('Quy định thư viện'));
+    await tester.pumpAndSettle();
+    expect(find.text('Nội dung quy định thư viện'), findsOneWidget);
   });
 
   testWidgets('fresh enrollment is shown instead of the old session value',

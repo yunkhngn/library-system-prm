@@ -16,6 +16,7 @@ import '../features/student/presentation/student_home_screen.dart';
 import '../features/student/presentation/student_shell.dart';
 import '../features/student/presentation/student_qr_screen.dart';
 import '../features/student/presentation/student_account_screen.dart';
+import '../features/student/presentation/student_rules_screen.dart';
 import '../features/student/presentation/student_face_enrollment_screen.dart';
 import '../features/student/presentation/student_change_password_screen.dart';
 import '../features/student/presentation/student_history_screen.dart';
@@ -115,6 +116,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               builder: (_, state) => StudentSessionDetailScreen(
                   sessionId: state.pathParameters['sessionId']!)),
           _route(Routes.studentAccount, const StudentAccountScreen()),
+          _route(Routes.studentRules, const StudentRulesScreen()),
           _route(Routes.studentChangePassword,
               const StudentChangePasswordScreen()),
           _route(Routes.studentFace, const StudentFaceEnrollmentScreen()),

@@ -90,6 +90,11 @@ class StudentAccountScreen extends ConsumerWidget {
                         detail:
                             user.faceEnrolled ? 'Đã đăng ký' : 'Chưa đăng ký',
                         onTap: () => context.go(Routes.studentFace)),
+                    const SizedBox(height: 14),
+                    _AccountSetting(
+                        title: 'Quy định thư viện',
+                        detail: 'Giờ mở cửa và thông tin thư viện',
+                        onTap: () => context.go(Routes.studentRules)),
                   ]),
             ),
             const SizedBox(height: AppSpacing.lg),

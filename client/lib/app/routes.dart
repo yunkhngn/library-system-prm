@@ -58,6 +58,7 @@ abstract final class Routes {
   static const studentAccount = '/student/account';
   static const studentChangePassword = '/student/account/password';
   static const studentFace = '/student/face';
+  static const studentRules = '/student/account/rules';
   static const kiosk = '/kiosk';
 
   static String homeFor(UserRole role) => switch (role) {

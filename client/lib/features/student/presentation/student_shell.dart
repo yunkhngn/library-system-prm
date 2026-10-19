@@ -32,7 +32,9 @@ class StudentShell extends ConsumerWidget {
                 : 0;
     final outside = path == Routes.studentHome &&
         ref.watch(studentHomeProvider).asData?.value.status.isInside == false;
-    final title = outside
+    final title = path == Routes.studentRules
+        ? 'Quy định thư viện'
+        : outside
             ? 'Trạng thái ngoài thư viện'
             : path == Routes.studentFace
                 ? 'Nhận diện khuôn mặt'
