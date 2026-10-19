@@ -16,6 +16,7 @@ import '../features/student/presentation/student_home_screen.dart';
 import '../features/student/presentation/student_shell.dart';
 import '../features/student/presentation/student_qr_screen.dart';
 import '../features/student/presentation/student_history_screen.dart';
+import '../features/student/presentation/student_session_detail_screen.dart';
 import '../features/admin/presentation/accounts_screen.dart';
 import '../features/admin/presentation/admin_overview_screen.dart';
 import '../features/admin/presentation/analytics_screen.dart';
@@ -108,8 +109,8 @@ final routerProvider = Provider<GoRouter>((ref) {
           _route(Routes.studentHistory, const StudentHistoryScreen()),
           GoRoute(
               path: '${Routes.studentHistory}/:sessionId',
-              builder: (_, __) => const PlaceholderPage(
-                  screenId: 'STU-04', title: 'Chi tiết lượt ra vào')),
+              builder: (_, state) => StudentSessionDetailScreen(
+                  sessionId: state.pathParameters['sessionId']!)),
           _route(Routes.studentAccount,
               const PlaceholderPage(screenId: 'STU-05', title: 'Tài khoản')),
           _route(

@@ -31,7 +31,9 @@ class StudentShell extends StatelessWidget {
         ? 'Nhận diện khuôn mặt'
         : path == Routes.studentQr
             ? 'Mã QR cá nhân'
-            : path == Routes.studentHistory
+            : path.startsWith('${Routes.studentHistory}/')
+                ? 'Chi tiết lượt ra vào'
+                : path == Routes.studentHistory
                     ? 'Lịch sử ra vào'
                     : tabs[selected].$2;
     return Scaffold(
