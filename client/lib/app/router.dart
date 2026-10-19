@@ -14,6 +14,7 @@ import '../features/auth/presentation/staff_profile_screen.dart';
 import '../features/dev/component_gallery_screen.dart';
 import '../features/student/presentation/student_home_screen.dart';
 import '../features/student/presentation/student_shell.dart';
+import '../features/student/presentation/student_qr_screen.dart';
 import '../features/admin/presentation/accounts_screen.dart';
 import '../features/admin/presentation/admin_overview_screen.dart';
 import '../features/admin/presentation/analytics_screen.dart';
@@ -102,7 +103,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, __, child) => StudentShell(child: child),
         routes: [
           _route(Routes.studentHome, const StudentHomeScreen()),
-          _route(Routes.studentQr, const PlaceholderPage(screenId: 'STU-02', title: 'Mã QR cá nhân')),
+          _route(Routes.studentQr, const StudentQrScreen()),
           _route(
               Routes.studentHistory,
               const PlaceholderPage(
