@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../application/student_home_provider.dart';
 
 import '../../../app/routes.dart';
 import '../../../core/theme/app_colors.dart';
@@ -7,12 +9,12 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_typography.dart';
 
 /// The text-only app bar and bottom tabs follow the STU Figma frames.
-class StudentShell extends StatelessWidget {
+class StudentShell extends ConsumerWidget {
   const StudentShell({super.key, required this.child});
   final Widget child;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final path = GoRouterState.of(context).uri.path;
     const tabs = [
       (Routes.studentHome, 'Trang chủ'),
@@ -28,17 +30,21 @@ class StudentShell extends StatelessWidget {
                     path == Routes.studentFace
                 ? 3
                 : 0;
-    final title = path == Routes.studentFace
-        ? 'Nhận diện khuôn mặt'
-        : path == Routes.studentQr
-            ? 'Mã QR cá nhân'
-            : path == Routes.studentChangePassword
-                ? 'Đổi mật khẩu'
-                : path.startsWith('${Routes.studentHistory}/')
-                    ? 'Chi tiết lượt ra vào'
-                    : path == Routes.studentHistory
-                        ? 'Lịch sử ra vào'
-                        : tabs[selected].$2;
+    final outside = path == Routes.studentHome &&
+        ref.watch(studentHomeProvider).asData?.value.status.isInside == false;
+    final title = outside
+            ? 'Trạng thái ngoài thư viện'
+            : path == Routes.studentFace
+                ? 'Nhận diện khuôn mặt'
+                : path == Routes.studentQr
+                    ? 'Mã QR cá nhân'
+                    : path == Routes.studentChangePassword
+                        ? 'Đổi mật khẩu'
+                        : path.startsWith('${Routes.studentHistory}/')
+                            ? 'Chi tiết lượt ra vào'
+                            : path == Routes.studentHistory
+                                ? 'Lịch sử ra vào'
+                                : tabs[selected].$2;
     return Scaffold(
       body: SafeArea(
         bottom: false,

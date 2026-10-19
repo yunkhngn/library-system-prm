@@ -55,6 +55,8 @@ StudentHomeData _data(
         version: 1),
     status: StudentAccessStatus(
         isInside: inside, currentSession: inside ? current : null, asOf: _now),
+    faceEnrolledAt:
+        enrolled ? DateTime.parse('2026-10-01T08:00:00+07:00') : null,
     recent: empty
         ? []
         : [
@@ -159,12 +161,39 @@ void main() {
         load: () async => _data(inside: false, empty: true, enrolled: true));
     expect(find.text('Ngoài thư viện'), findsOneWidget);
     expect(find.text('Vào lúc 13:05'), findsNothing);
-    expect(find.text('Chưa có lượt ra vào trong 30 ngày gần đây.'),
-        findsOneWidget);
-    expect(find.text('Quản lý khuôn mặt'), findsOneWidget);
-    await tester.tap(find.text('Quản lý khuôn mặt'));
+    expect(find.text('Chưa có lượt ra gần đây'), findsOneWidget);
+    expect(find.text('Lượt ra vào gần đây'), findsNothing);
+    expect(find.text('Đã đăng ký · 01/10/2026'), findsOneWidget);
+    await tester.tap(find.text('Nhận diện khuôn mặt'));
     await tester.pumpAndSettle();
     expect(find.text('Destination: ${Routes.studentFace}'), findsOneWidget);
+  });
+
+  testWidgets(
+      'STU-10 shows last exit, compact enrollment card and QR navigation',
+      (tester) async {
+    final router = await _pump(tester,
+        load: () async => _data(inside: false, enrolled: true));
+    expect(find.text('Trạng thái ngoài thư viện'), findsOneWidget);
+    expect(find.text('12/10/2026 lúc 11:40'), findsOneWidget);
+    expect(find.text('Lượt ra vào gần đây'), findsNothing);
+    expect(find.text('Đã đăng ký · 01/10/2026'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    if (const bool.fromEnvironment('CAPTURE_STU10')) {
+      final boundary =
+          tester.renderObject<RenderRepaintBoundary>(find.byKey(_captureKey));
+      await tester.runAsync(() async {
+        final image = await boundary.toImage();
+        final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+        await Directory('build/previews').create(recursive: true);
+        await File('build/previews/stu-10.png')
+            .writeAsBytes(bytes!.buffer.asUint8List());
+        image.dispose();
+      });
+    }
+    await tester.tap(find.text('Mở mã QR ra vào'));
+    await tester.pumpAndSettle();
+    expect(router.routeInformationProvider.value.uri.path, Routes.studentQr);
   });
 
   testWidgets(

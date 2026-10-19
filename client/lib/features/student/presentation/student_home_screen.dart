@@ -137,11 +137,14 @@ class _HomeContent extends StatelessWidget {
           minHeight: 184,
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            StatusBadge(
-                label: inside ? 'Đang trong thư viện' : 'Ngoài thư viện',
-                tone: inside ? BadgeTone.success : BadgeTone.neutral,
-                icon: inside ? Icons.check : null),
-            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+                width: inside ? null : 148,
+                height: inside ? null : 30,
+                child: StatusBadge(
+                    label: inside ? 'Đang trong thư viện' : 'Ngoài thư viện',
+                    tone: inside ? BadgeTone.success : BadgeTone.neutral,
+                    icon: inside ? Icons.check : Icons.circle_outlined)),
+            SizedBox(height: inside ? AppSpacing.md : 24),
             if (inside && current != null) ...[
               Text('Vào lúc ${Fmt.time(current.checkInTime)}',
                   style: AppTypography.h2
@@ -161,65 +164,101 @@ class _HomeContent extends StatelessWidget {
                   style: AppTypography.caption),
             ] else ...[
               Text(inside ? 'Đang cập nhật lượt vào' : 'Lần ra gần nhất',
-                  style: AppTypography.label),
+                  style: AppTypography.bodyM
+                      .copyWith(color: AppColors.textSecondary, height: 1.3)),
               const SizedBox(height: AppSpacing.sm),
               Text(
                   lastExit == null
                       ? 'Chưa có lượt ra gần đây'
-                      : Fmt.dateTime(lastExit),
-                  style: AppTypography.bodyL),
+                      : '${Fmt.date(lastExit)} lúc ${Fmt.time(lastExit)}',
+                  style: AppTypography.bodyL
+                      .copyWith(fontSize: 19, fontWeight: FontWeight.w700)),
             ],
           ]),
         ),
         const SizedBox(height: 18),
-        AppButton(
-            label: 'Mở mã QR ra vào',
-            icon: Icons.qr_code_2,
-            size: AppButtonSize.mobile,
-            alignment: MainAxisAlignment.start,
-            expand: true,
-            onPressed: () => context.go(Routes.studentQr)),
-        const SizedBox(height: AppSpacing.md),
-        _HomeCard(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Nhận diện khuôn mặt',
-                style: AppTypography.bodyL
-                    .copyWith(fontWeight: FontWeight.w600, height: 1.25)),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-                data.user.faceEnrolled
-                    ? 'Đã đăng ký — sẵn sàng ra vào bằng khuôn mặt'
-                    : 'Chưa đăng ký — đăng ký để ra vào nhanh hơn',
-                style: AppTypography.caption),
-            const SizedBox(height: AppSpacing.sm),
-            AppButton(
-                size: AppButtonSize.compact,
-                label: data.user.faceEnrolled
-                    ? 'Quản lý khuôn mặt'
-                    : 'Đăng ký khuôn mặt',
-                variant: AppButtonVariant.secondary,
-                onPressed: () => context.go(Routes.studentFace)),
-          ]),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        Semantics(
-            header: true,
+        SizedBox(
+            height: inside ? AppButtonSize.mobile.height : 44,
+            child: AppButton(
+                label: 'Mở mã QR ra vào',
+                icon: inside ? Icons.qr_code_2 : null,
+                size: AppButtonSize.mobile,
+                alignment: MainAxisAlignment.start,
+                expand: true,
+                onPressed: () => context.go(Routes.studentQr))),
+        SizedBox(height: inside ? AppSpacing.md : 20),
+        if (!inside)
+          Semantics(
+            button: true,
+            label: 'Quản lý khuôn mặt',
             child: InkWell(
-              onTap: () => context.go(Routes.studentHistory),
-              child: const Padding(
-                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: Text('Lượt ra vào gần đây', style: AppTypography.h3)),
-            )),
-        if (data.recent.isEmpty)
-          const _HomeCard(
-              child: Text('Chưa có lượt ra vào trong 30 ngày gần đây.',
-                  style: AppTypography.caption))
-        else
-          for (final session in data.recent) ...[
-            _HistoryRow(session: session, now: now),
-            const SizedBox(height: AppSpacing.sm),
-          ],
+              borderRadius: AppRadius.cardBorder,
+              onTap: () => context.go(Routes.studentFace),
+              child: _HomeCard(
+                minHeight: 100,
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nhận diện khuôn mặt',
+                          style: AppTypography.label.copyWith(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 6),
+                      Text(
+                          data.user.faceEnrolled
+                              ? 'Đã đăng ký${data.faceEnrolledAt == null ? '' : ' · ${Fmt.date(data.faceEnrolledAt!)}'}'
+                              : 'Chưa đăng ký',
+                          style: AppTypography.caption.copyWith(
+                              fontSize: 13,
+                              color: data.user.faceEnrolled
+                                  ? AppColors.success
+                                  : AppColors.textSecondary)),
+                    ]),
+              ),
+            ),
+          )
+        else ...[
+          _HomeCard(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Nhận diện khuôn mặt',
+                  style: AppTypography.bodyL
+                      .copyWith(fontWeight: FontWeight.w600, height: 1.25)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                  data.user.faceEnrolled
+                      ? 'Đã đăng ký — sẵn sàng ra vào bằng khuôn mặt'
+                      : 'Chưa đăng ký — đăng ký để ra vào nhanh hơn',
+                  style: AppTypography.caption),
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                  size: AppButtonSize.compact,
+                  label: data.user.faceEnrolled
+                      ? 'Quản lý khuôn mặt'
+                      : 'Đăng ký khuôn mặt',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => context.go(Routes.studentFace)),
+            ]),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Semantics(
+              header: true,
+              child: InkWell(
+                onTap: () => context.go(Routes.studentHistory),
+                child: const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                    child:
+                        Text('Lượt ra vào gần đây', style: AppTypography.h3)),
+              )),
+          if (data.recent.isEmpty)
+            const _HomeCard(
+                child: Text('Chưa có lượt ra vào trong 30 ngày gần đây.',
+                    style: AppTypography.caption))
+          else
+            for (final session in data.recent) ...[
+              _HistoryRow(session: session, now: now),
+              const SizedBox(height: AppSpacing.sm),
+            ],
+        ],
       ],
     );
   }
