@@ -24,18 +24,21 @@ class StudentShell extends StatelessWidget {
         ? 2
         : path == Routes.studentQr
             ? 1
-            : path == Routes.studentAccount || path == Routes.studentFace
+            : path.startsWith(Routes.studentAccount) ||
+                    path == Routes.studentFace
                 ? 3
                 : 0;
     final title = path == Routes.studentFace
         ? 'Nhận diện khuôn mặt'
         : path == Routes.studentQr
             ? 'Mã QR cá nhân'
-            : path.startsWith('${Routes.studentHistory}/')
-                ? 'Chi tiết lượt ra vào'
-                : path == Routes.studentHistory
-                    ? 'Lịch sử ra vào'
-                    : tabs[selected].$2;
+            : path == Routes.studentChangePassword
+                ? 'Đổi mật khẩu'
+                : path.startsWith('${Routes.studentHistory}/')
+                    ? 'Chi tiết lượt ra vào'
+                    : path == Routes.studentHistory
+                        ? 'Lịch sử ra vào'
+                        : tabs[selected].$2;
     return Scaffold(
       body: SafeArea(
         bottom: false,

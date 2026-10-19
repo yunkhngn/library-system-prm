@@ -56,6 +56,7 @@ abstract final class Routes {
   static String studentHistoryDetail(String id) =>
       '$studentHistory/${Uri.encodeComponent(id)}';
   static const studentAccount = '/student/account';
+  static const studentChangePassword = '/student/account/password';
   static const studentFace = '/student/face';
   static const kiosk = '/kiosk';
 
