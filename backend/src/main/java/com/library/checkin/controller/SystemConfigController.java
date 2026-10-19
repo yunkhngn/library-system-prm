@@ -24,7 +24,7 @@ public class SystemConfigController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'LIBRARIAN', 'STUDENT')")
     @Operation(operationId = "getSystemConfig", summary = "getSystemConfig")
     public ResponseEntity<SystemConfig> getSystemConfig() {
         SystemConfig config = systemConfigService.getOperational();

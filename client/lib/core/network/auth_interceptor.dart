@@ -18,6 +18,9 @@ class AuthInterceptor extends QueuedInterceptor {
         _onSessionExpired = onSessionExpired;
 
   static const skipAuthKey = 'skipAuth';
+
+  /// Refresh authentication after a 401, but leave issuing a new QR to the user.
+  static const noReplayKey = 'noReplay';
   static const _retriedKey = 'authRetried';
 
   final Dio _dio;
@@ -35,20 +38,25 @@ class AuthInterceptor extends QueuedInterceptor {
   }
 
   @override
-  Future<void> onError(DioException err, ErrorInterceptorHandler handler) async {
+  Future<void> onError(
+      DioException err, ErrorInterceptorHandler handler) async {
     final options = err.requestOptions;
     final shouldRefresh = err.response?.statusCode == 401 &&
         options.extra[skipAuthKey] != true &&
         options.extra[_retriedKey] != true;
     if (!shouldRefresh) return handler.next(err);
 
-    final sentToken = (options.headers['Authorization'] as String?)?.replaceFirst('Bearer ', '');
-    final alreadyRefreshed = sentToken != null && sentToken != _tokens.accessToken;
+    final sentToken = (options.headers['Authorization'] as String?)
+        ?.replaceFirst('Bearer ', '');
+    final alreadyRefreshed =
+        sentToken != null && sentToken != _tokens.accessToken;
 
     if (!alreadyRefreshed && !await _refreshSession()) {
       _onSessionExpired();
       return handler.next(err);
     }
+
+    if (options.extra[noReplayKey] == true) return handler.next(err);
 
     try {
       options.extra[_retriedKey] = true;

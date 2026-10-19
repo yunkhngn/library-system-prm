@@ -12,6 +12,15 @@ import '../features/auth/presentation/session_status_screen.dart';
 import '../features/auth/presentation/splash_screen.dart';
 import '../features/auth/presentation/staff_profile_screen.dart';
 import '../features/dev/component_gallery_screen.dart';
+import '../features/student/presentation/student_home_screen.dart';
+import '../features/student/presentation/student_shell.dart';
+import '../features/student/presentation/student_qr_screen.dart';
+import '../features/student/presentation/student_account_screen.dart';
+import '../features/student/presentation/student_rules_screen.dart';
+import '../features/student/presentation/student_face_enrollment_screen.dart';
+import '../features/student/presentation/student_change_password_screen.dart';
+import '../features/student/presentation/student_history_screen.dart';
+import '../features/student/presentation/student_session_detail_screen.dart';
 import '../features/admin/presentation/accounts_screen.dart';
 import '../features/admin/presentation/admin_overview_screen.dart';
 import '../features/admin/presentation/analytics_screen.dart';
@@ -96,7 +105,23 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
 
       // P3–P4 student and P10–P11 kiosk own their shells.
-      _route(Routes.studentHome, const _Standalone('STU-01', 'Trang chủ')),
+      ShellRoute(
+        builder: (_, __, child) => StudentShell(child: child),
+        routes: [
+          _route(Routes.studentHome, const StudentHomeScreen()),
+          _route(Routes.studentQr, const StudentQrScreen()),
+          _route(Routes.studentHistory, const StudentHistoryScreen()),
+          GoRoute(
+              path: '${Routes.studentHistory}/:sessionId',
+              builder: (_, state) => StudentSessionDetailScreen(
+                  sessionId: state.pathParameters['sessionId']!)),
+          _route(Routes.studentAccount, const StudentAccountScreen()),
+          _route(Routes.studentRules, const StudentRulesScreen()),
+          _route(Routes.studentChangePassword,
+              const StudentChangePasswordScreen()),
+          _route(Routes.studentFace, const StudentFaceEnrollmentScreen()),
+        ],
+      ),
       _route(Routes.kiosk, const _Standalone('KSK-02', 'Kiosk sẵn sàng')),
     ],
   );
