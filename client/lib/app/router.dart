@@ -35,7 +35,7 @@ import '../features/librarian/my_shifts/presentation/my_shifts_screen.dart';
 import '../features/librarian/occupants/presentation/occupants_screen.dart';
 import '../features/librarian/visitors/presentation/visitor_detail_screen.dart';
 import '../features/librarian/visitors/presentation/visitors_screen.dart';
-import '../shared/widgets/placeholder_page.dart';
+import '../features/kiosk/presentation/kiosk_screen.dart';
 import 'routes.dart';
 import 'shell/staff_shell.dart';
 
@@ -122,7 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           _route(Routes.studentFace, const StudentFaceEnrollmentScreen()),
         ],
       ),
-      _route(Routes.kiosk, const _Standalone('KSK-02', 'Kiosk sẵn sàng')),
+      _route(Routes.kiosk, const KioskScreen()),
     ],
   );
 });
@@ -167,14 +167,3 @@ bool _canAccess(UserRole role, String path) {
 
 GoRoute _route(String path, Widget screen) =>
     GoRoute(path: path, builder: (_, __) => screen);
-
-class _Standalone extends StatelessWidget {
-  const _Standalone(this.id, this.title);
-
-  final String id;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) =>
-      Scaffold(body: PlaceholderPage(screenId: id, title: title));
-}
