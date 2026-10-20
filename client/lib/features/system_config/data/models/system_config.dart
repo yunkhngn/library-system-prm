@@ -16,8 +16,8 @@ class OpeningSlot {
   bool get isAllDay => opensAt == '00:00' && (closesAt == '23:59' || closesAt == '24:00');
 }
 
-/// Library rules from `GET /system-config`. Face-recognition tuning fields
-/// are admin-only concerns and are not mapped here.
+/// Library rules from `GET /system-config`, including optional calibration
+/// fields edited by administrators on ADM-18.
 class SystemConfig {
   const SystemConfig({
     required this.timezone,

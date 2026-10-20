@@ -31,6 +31,16 @@ class ConfigRepositoryFake implements SystemConfigRepository {
     if (error != null) throw error!;
     saved = Map.of(patch);
     json = {...json, ...patch, 'version': (json['version'] as int) + 1};
+    if (patch['resetFaceConfiguration'] == true) {
+      for (final key in [
+        'faceModelVersion',
+        'faceMaxCosineDistance',
+        'faceMinDistanceGap',
+        'livenessMinScore'
+      ]) {
+        json[key] = null;
+      }
+    }
     return SystemConfig.fromJson(json);
   }
 }
