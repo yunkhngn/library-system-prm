@@ -11,6 +11,7 @@ import '../../access/application/occupancy_providers.dart';
 import '../../system_config/application/system_config_provider.dart';
 import '../../system_config/data/models/system_config.dart';
 import 'widgets/admin_ui.dart';
+import 'widgets/operational_config_body.dart';
 
 class ConfigScreen extends ConsumerStatefulWidget {
   const ConfigScreen({super.key});
@@ -20,6 +21,8 @@ class ConfigScreen extends ConsumerStatefulWidget {
 }
 
 class _ConfigScreenState extends ConsumerState<ConfigScreen> {
+  final _form = GlobalKey<FormState>();
+  List<OpeningSlot> _hours = [];
   final _capacity = TextEditingController();
   final _ratio = TextEditingController();
   final _cooldown = TextEditingController();
@@ -68,8 +71,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
             ButtonSegment(value: true, label: Text('Nhận diện')),
           ],
           selected: {_advanced},
-          onSelectionChanged: (value) =>
-              setState(() => _advanced = value.first),
+          onSelectionChanged: _saving
+              ? null
+              : (value) => setState(() => _advanced = value.first),
         ),
       ],
       child: AsyncValueView(
@@ -95,7 +99,24 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                 if (_advanced)
                   _advancedBody(displayConfig)
                 else
-                  _generalBody(displayConfig),
+                  AbsorbPointer(
+                    absorbing: _saving,
+                    child: Form(
+                      key: _form,
+                      child: OperationalConfigBody(
+                        config: displayConfig,
+                        hours: _hours,
+                        capacity: _capacity,
+                        ratio: _ratio,
+                        cooldown: _cooldown,
+                        onChanged: _markDirty,
+                        onHoursChanged: (value) => setState(() {
+                          _hours = value;
+                          _dirty = true;
+                        }),
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 28),
                 AdminCard(
                   padding:
@@ -116,8 +137,11 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
                               fontWeight: FontWeight.w500)),
                       Wrap(spacing: 10, children: [
                         OutlinedButton(
-                            onPressed: _dirty
-                                ? () => setState(() => _load(displayConfig))
+                            onPressed: _dirty && !_saving
+                                ? () => setState(() {
+                                      _load(displayConfig);
+                                      _form.currentState?.reset();
+                                    })
                                 : null,
                             child: const Text('Hủy thay đổi')),
                         FilledButton(
@@ -135,96 +159,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
       ),
     );
   }
-
-  Widget _generalBody(SystemConfig config) =>
-      LayoutBuilder(builder: (context, constraints) {
-        final twoColumns = constraints.maxWidth >= 760;
-        final left =
-            twoColumns ? constraints.maxWidth * .62 : constraints.maxWidth;
-        final right =
-            twoColumns ? constraints.maxWidth * .34 : constraints.maxWidth;
-        return Wrap(
-            spacing: constraints.maxWidth * .04,
-            runSpacing: 16,
-            children: [
-              SizedBox(
-                  width: left,
-                  child: AdminCard(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        const AdminSectionTitle('Giờ mở cửa'),
-                        const SizedBox(height: 2),
-                        const Text('Thời gian cho phép ghi nhận vào',
-                            style: AppTypography.caption),
-                        const SizedBox(height: 14),
-                        for (var day = 1; day <= 7; day++)
-                          _openingRow(day, config.slotFor(day)),
-                      ]))),
-              SizedBox(
-                  width: right,
-                  child: AdminCard(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                        const AdminSectionTitle('Sức chứa'),
-                        const SizedBox(height: 18),
-                        const AdminFieldLabel('Sức chứa tối đa'),
-                        TextField(
-                            controller: _capacity,
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => _markDirty(),
-                            decoration:
-                                const InputDecoration(suffixText: 'người')),
-                        const SizedBox(height: 16),
-                        const AdminFieldLabel('Ngưỡng cảnh báo gần đầy'),
-                        TextField(
-                            controller: _ratio,
-                            keyboardType: TextInputType.number,
-                            onChanged: (_) => _markDirty(),
-                            decoration: const InputDecoration(suffixText: '%')),
-                      ]))),
-              SizedBox(
-                  width: left,
-                  child: AdminCard(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        const AdminSectionTitle('Lượt ra vào'),
-                        const SizedBox(height: 18),
-                        _valueRow(
-                            'Thời gian lưu lại tối đa',
-                            config.maxSessionDurationMinutes == null
-                                ? 'Không giới hạn'
-                                : '${config.maxSessionDurationMinutes} phút'),
-                        const SizedBox(height: 18),
-                        Row(children: [
-                          const Expanded(
-                              child: Text('Khoảng cách giữa hai lần quét')),
-                          SizedBox(
-                              width: 130,
-                              child: TextField(
-                                  controller: _cooldown,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (_) => _markDirty(),
-                                  decoration: const InputDecoration(
-                                      suffixText: 'giây'))),
-                        ]),
-                      ]))),
-              SizedBox(
-                  width: right,
-                  child: AdminCard(
-                      child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                        const AdminSectionTitle('Múi giờ'),
-                        const SizedBox(height: 18),
-                        Text('${config.timezone} (GMT+7)',
-                            style: AppTypography.bodyM
-                                .copyWith(color: AppColors.textSecondary)),
-                      ]))),
-            ]);
-      });
 
   Widget _advancedBody(SystemConfig config) =>
       LayoutBuilder(builder: (context, constraints) {
@@ -291,41 +225,6 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         ]);
       });
 
-  Widget _openingRow(int day, OpeningSlot? slot) {
-    const labels = [
-      'Thứ Hai',
-      'Thứ Ba',
-      'Thứ Tư',
-      'Thứ Năm',
-      'Thứ Sáu',
-      'Thứ Bảy',
-      'Chủ Nhật'
-    ];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
-      child: Row(children: [
-        Expanded(
-            child: Text(labels[day - 1],
-                style: AppTypography.caption
-                    .copyWith(color: AppColors.textPrimary))),
-        Expanded(
-            child: Text(
-                slot == null
-                    ? 'Đóng cửa'
-                    : '${slot.opensAt} – ${slot.closesAt}',
-                style: AppTypography.caption)),
-      ]),
-    );
-  }
-
-  Widget _valueRow(String label, String value) => Row(children: [
-        Expanded(child: Text(label, style: AppTypography.bodyM)),
-        Expanded(
-            child: Text(value,
-                style: AppTypography.bodyM
-                    .copyWith(color: AppColors.textSecondary))),
-      ]);
-
   Widget _field(String label, TextEditingController controller,
           {bool numeric = false}) =>
       Padding(
@@ -347,8 +246,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
   void _load(SystemConfig config) {
     _loaded = true;
     _loadedVersion = config.version;
+    _hours = List.of(config.openingHours);
     _capacity.text = '${config.maxCapacity}';
-    _ratio.text = '${(config.nearCapacityRatio * 100).round()}';
+    _ratio.text = '${config.nearCapacityRatio * 100}';
     _cooldown.text = '${config.scanCooldownSeconds}';
     _model.text = config.faceModelVersion ?? '';
     _cosine.text = config.faceMaxCosineDistance?.toString() ?? '';
@@ -363,8 +263,9 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
 
   Future<void> _save(SystemConfig config) async {
     if (_saving) return;
+    if (!_advanced && !(_form.currentState?.validate() ?? false)) return;
     final capacity = int.tryParse(_capacity.text);
-    final ratioPercent = double.tryParse(_ratio.text);
+    final ratioPercent = double.tryParse(_ratio.text.replaceAll(',', '.'));
     final cooldown = int.tryParse(_cooldown.text);
     final cosine = double.tryParse(_cosine.text);
     final gap = double.tryParse(_gap.text);
@@ -397,7 +298,16 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
     try {
       final updated =
           await ref.read(systemConfigControllerProvider.notifier).save({
-        'version': config.version,
+        'version': _loadedVersion,
+        if (!_advanced)
+          'openingHours': [
+            for (final slot in _hours)
+              {
+                'dayOfWeek': slot.dayOfWeek,
+                'opensAt': slot.opensAt,
+                'closesAt': slot.closesAt,
+              },
+          ],
         'maxCapacity': capacity,
         'nearCapacityRatio': ratioPercent / 100,
         'capacityEnforcement': config.capacityEnforcement,
@@ -407,7 +317,7 @@ class _ConfigScreenState extends ConsumerState<ConfigScreen> {
         'faceMinDistanceGap': gap,
         'livenessMinScore': liveness,
       });
-      ref.read(occupancyProvider.notifier).reload();
+      ref.invalidate(occupancyProvider);
       if (mounted) {
         setState(() {
           _latestSavedConfig = updated;
