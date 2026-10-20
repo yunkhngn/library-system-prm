@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/paged.dart';
+import '../../../core/utils/formatters.dart';
 import '../../access/application/occupancy_providers.dart';
 import '../../access/data/models/occupant.dart';
 import '../../access/data/occupancy_repository.dart';
@@ -107,8 +108,7 @@ final shiftsProvider = FutureProvider.autoDispose<Paged<AdminShift>>((ref) {
 
 final analyticsQueryProvider = StateProvider.autoDispose<AnalyticsQuery>((_) {
   final now = DateTime.now();
-  final to =
-      DateTime(now.year, now.month, now.day).add(const Duration(days: 1));
+  final to = Fmt.startOfNextVietnamDay(now);
   return AnalyticsQuery(from: to.subtract(const Duration(days: 7)), to: to);
 });
 final accessAnalyticsProvider = FutureProvider.autoDispose<AccessAnalytics>(
