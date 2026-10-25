@@ -195,7 +195,7 @@ class KiosksScreen extends ConsumerWidget {
                             });
                             if (!ctx.mounted) return;
                             Navigator.pop(ctx);
-                            await _showCredential(context, result.credential);
+                            await _showCredential(context, result.credential, result.kiosk.id);
                           } on ApiException catch (error) {
                             if (ctx.mounted) {
                               setState(() => loading = false);
@@ -209,7 +209,7 @@ class KiosksScreen extends ConsumerWidget {
     name.dispose();
   }
 
-  Future<void> _showCredential(BuildContext context, String credential) =>
+  Future<void> _showCredential(BuildContext context, String credential, String kioskId) =>
       showDialog<void>(
           context: context,
           barrierDismissible: false,
@@ -224,6 +224,10 @@ class KiosksScreen extends ConsumerWidget {
                           const Text(
                               'Khóa này chỉ hiển thị một lần. Hãy sao chép và lưu tại nơi an toàn.'),
                           const SizedBox(height: 16),
+                          const Text('ID thiết bị (UUID)'),
+                          SelectableText(kioskId),
+                          const SizedBox(height: 12),
+                          const Text('Khóa thiết bị'),
                           SelectableText(credential,
                               style: const TextStyle(fontFamily: 'monospace')),
                         ])),
@@ -318,7 +322,7 @@ class KiosksScreen extends ConsumerWidget {
                                             }
                                             if (context.mounted) {
                                               await _showCredential(
-                                                  context, result.credential);
+                                                  context, result.credential, result.kiosk.id);
                                             }
                                           } on ApiException catch (error) {
                                             if (ctx.mounted) {

@@ -74,7 +74,8 @@ public class SystemConfigService {
                 || request.faceModelVersion() != null
                 || request.faceMaxCosineDistance() != null
                 || request.faceMinDistanceGap() != null
-                || request.livenessMinScore() != null;
+                || request.livenessMinScore() != null
+                || Boolean.TRUE.equals(request.resetFaceConfiguration());
 
         if (!hasUpdate) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "At least one field must be updated");
@@ -137,6 +138,11 @@ public class SystemConfigService {
                 || request.faceMinDistanceGap() != null
                 || request.livenessMinScore() != null;
 
+        if (Boolean.TRUE.equals(request.resetFaceConfiguration()) && anyCalibration) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR",
+                    "Cannot reset and set face configuration in the same request");
+        }
+
         if (anyCalibration) {
             if (request.faceMaxCosineDistance() != null && (request.faceMaxCosineDistance() < 0.0 || request.faceMaxCosineDistance() > 2.0)) {
                 throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VALIDATION_ERROR", "faceMaxCosineDistance must be between 0.0 and 2.0");
@@ -194,6 +200,12 @@ public class SystemConfigService {
             }
             if (request.livenessMinScore() != null) {
                 root.put("livenessMinScore", request.livenessMinScore());
+            }
+            if (Boolean.TRUE.equals(request.resetFaceConfiguration())) {
+                root.putNull("faceModelVersion");
+                root.putNull("faceMaxCosineDistance");
+                root.putNull("faceMinDistanceGap");
+                root.putNull("livenessMinScore");
             }
 
             entity.setValue(objectMapper.writeValueAsString(root));

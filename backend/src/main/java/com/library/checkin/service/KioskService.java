@@ -205,7 +205,10 @@ public class KioskService {
                 config.openingHours(),
                 30L,
                 config.scanCooldownSeconds(),
-                false,
+                config.faceModelVersion() != null && !config.faceModelVersion().isBlank()
+                        && config.faceMaxCosineDistance() != null
+                        && config.faceMinDistanceGap() != null
+                        && config.livenessMinScore() != null,
                 FaceCaptureRules.defaultRules(),
                 OffsetDateTime.now(),
                 config.version()

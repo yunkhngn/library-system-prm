@@ -41,9 +41,10 @@ class AdminMetricCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AdminCard(
         padding: const EdgeInsets.all(20),
-        child: SizedBox(
-          height: footer == null ? 66 : 88,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: footer == null ? 66 : 88),
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label, style: AppTypography.caption.copyWith(fontSize: 13)),
@@ -56,7 +57,7 @@ class AdminMetricCard extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              if (footer != null) ...[const Spacer(), footer!],
+              if (footer != null) ...[const SizedBox(height: 12), footer!],
             ],
           ),
         ),
