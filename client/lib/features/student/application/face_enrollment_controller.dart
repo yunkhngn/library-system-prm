@@ -7,6 +7,7 @@ import '../../../core/network/api_error.dart';
 import '../../auth/application/session_controller.dart';
 import '../../auth/data/models/user.dart';
 import '../data/face_enrollment_repository.dart';
+import 'image_dimensions.dart';
 import 'student_account_provider.dart';
 import 'student_home_provider.dart';
 
@@ -152,17 +153,19 @@ class FaceEnrollmentController
         if (!png && !jpeg) {
           throw const FormatException('Vui lòng chọn ảnh JPEG hoặc PNG.');
         }
-        final buffer = await ui.ImmutableBuffer.fromUint8List(bytes);
-        ui.ImageDescriptor? descriptor;
+        final dimensions = imageDimensions(bytes);
+        if (dimensions.width * dimensions.height > policy.maxPixels) {
+          throw const FormatException(
+              'Độ phân giải ảnh vượt giới hạn cho phép.');
+        }
+        // ImageDescriptor.width/height throw for encoded images on Flutter web.
+        // Decode only after the header dimensions pass the pixel limit.
+        final codec = await ui.instantiateImageCodec(bytes);
         try {
-          descriptor = await ui.ImageDescriptor.encoded(buffer);
-          if (descriptor.width * descriptor.height > policy.maxPixels) {
-            throw const FormatException(
-                'Độ phân giải ảnh vượt giới hạn cho phép.');
-          }
+          final frame = await codec.getNextFrame();
+          frame.image.dispose();
         } finally {
-          descriptor?.dispose();
-          buffer.dispose();
+          codec.dispose();
         }
         result.add(FacePhoto(
             bytes: Uint8List.fromList(bytes),
