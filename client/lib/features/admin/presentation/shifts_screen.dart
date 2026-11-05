@@ -11,6 +11,7 @@ import '../../../shared/widgets/async_value_view.dart';
 import '../../../shared/widgets/page_scaffold.dart';
 import '../application/admin_providers.dart';
 import '../data/admin_models.dart';
+import 'widgets/shift_detail_sheet.dart';
 
 class ShiftsScreen extends ConsumerStatefulWidget {
   const ShiftsScreen({super.key});
@@ -78,8 +79,9 @@ class _ShiftsScreenState extends ConsumerState<ShiftsScreen> {
                         start.month == date.month &&
                         start.day == date.day;
                   }).toList(),
-                  onCancel: (shift) =>
-                      _cancel(context, shift.id, shift.version, shift.name),
+                  onOpen: (shift) => showAdminShiftDetail(context, shift,
+                      onCancelShift: (latest) => _cancel(
+                          context, latest.id, latest.version, latest.name)),
                 ),
                 if (day < 6) const SizedBox(width: 10),
               ],
@@ -128,7 +130,7 @@ class _ShiftsScreenState extends ConsumerState<ShiftsScreen> {
                             errorText: validationMessage,
                             hint: 'Ví dụ: Ca sáng'),
                         const SizedBox(height: 16),
-                        const Text('Ngày trực', style: AppTypography.label),
+                        Text('Ngày trực', style: AppTypography.label),
                         const SizedBox(height: 6),
                         OutlinedButton.icon(
                           icon: const Icon(Icons.calendar_today_outlined),
@@ -274,7 +276,7 @@ class _ShiftsScreenState extends ConsumerState<ShiftsScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Row(children: [
-                                const CircleAvatar(
+                                CircleAvatar(
                                     backgroundColor: AppColors.errorSurface,
                                     child: Text('!',
                                         style: TextStyle(
@@ -353,10 +355,10 @@ class _ShiftsScreenState extends ConsumerState<ShiftsScreen> {
 
 class _DayColumn extends StatelessWidget {
   const _DayColumn(
-      {required this.date, required this.shifts, required this.onCancel});
+      {required this.date, required this.shifts, required this.onOpen});
   final DateTime date;
   final List<AdminShift> shifts;
-  final ValueChanged<AdminShift> onCancel;
+  final ValueChanged<AdminShift> onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -374,7 +376,7 @@ class _DayColumn extends StatelessWidget {
       height: 500,
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           border: Border.all(color: AppColors.border),
           borderRadius: BorderRadius.circular(8)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -388,13 +390,13 @@ class _DayColumn extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(bottom: 12),
             child: InkWell(
-              onTap: shift.status == 'ACTIVE' ? () => onCancel(shift) : null,
+              onTap: () => onOpen(shift),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(10, 10, 6, 10),
-                decoration: const BoxDecoration(
-                    color: Colors.white,
+                decoration: BoxDecoration(
+                    color: AppColors.surface,
                     border: Border(
-                        left: BorderSide(color: AppColors.navy, width: 5))),
+                        left: BorderSide(color: _accent(shift), width: 5))),
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -406,11 +408,11 @@ class _DayColumn extends StatelessWidget {
                       Text(_time(shift),
                           style: AppTypography.caption.copyWith(
                               fontSize: 10, color: AppColors.textPrimary)),
-                      Text(
-                          shift.status == 'ACTIVE'
-                              ? 'Đang hoạt động'
-                              : 'Đã hủy',
-                          style: AppTypography.caption.copyWith(fontSize: 10)),
+                      Text(_staffing(shift),
+                          style: AppTypography.caption.copyWith(
+                              fontSize: 10,
+                              color: _accent(shift),
+                              fontWeight: FontWeight.w600)),
                     ]),
               ),
             ),
@@ -421,5 +423,17 @@ class _DayColumn extends StatelessWidget {
 
   String _time(AdminShift shift) {
     return '${Fmt.time(shift.startsAt)}–${Fmt.time(shift.endsAt)}';
+  }
+
+  String _staffing(AdminShift shift) {
+    if (!shift.isActive) return 'Đã hủy';
+    if (shift.assignmentCount == 0) return 'Chưa phân công';
+    return '${shift.assignmentCount} thủ thư';
+  }
+
+  Color _accent(AdminShift shift) {
+    if (!shift.isActive) return AppColors.textSecondary;
+    if (shift.assignmentCount == 0) return AppColors.warning;
+    return AppColors.navy;
   }
 }

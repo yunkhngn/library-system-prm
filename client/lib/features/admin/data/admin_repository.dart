@@ -17,6 +17,13 @@ abstract interface class AdminRepository {
   Future<Paged<AdminShift>> listShifts(Map<String, dynamic> query);
   Future<AdminShift> createShift(Map<String, dynamic> body);
   Future<AdminShift> cancelShift(String id, Map<String, dynamic> body);
+  Future<AdminShift> getShift(String id);
+  Future<List<AdminAssignment>> listActiveAssignments(String shiftId);
+  Future<void> assignStaff(String shiftId, int version, List<String> staffIds);
+  Future<void> replaceAssignedStaff(
+      String shiftId, String assignmentId, int version, String staffId);
+  Future<void> cancelAssignment(
+      String shiftId, String assignmentId, int version);
   Future<AccessAnalytics> accessAnalytics(Map<String, dynamic> query);
   Future<RecognitionAnalytics> recognitionAnalytics(Map<String, dynamic> query);
 }
@@ -76,6 +83,35 @@ class AdminApi implements AdminRepository {
           () => _dio.post<Map<String, dynamic>>('/api/v1/shifts/$id/cancel',
               data: body),
           AdminShift.fromJson);
+  @override
+  Future<AdminShift> getShift(String id) => apiCall(
+      () => _dio.get<Map<String, dynamic>>('/api/v1/shifts/$id'),
+      AdminShift.fromJson);
+  @override
+  Future<List<AdminAssignment>> listActiveAssignments(String shiftId) =>
+      apiCall(
+          () => _dio.get<Map<String, dynamic>>(
+              '/api/v1/shifts/$shiftId/assignments',
+              queryParameters: {'status': 'ACTIVE', 'page': 0, 'size': 100}),
+          (json) => Paged.fromJson(json, AdminAssignment.fromJson).items);
+  @override
+  Future<void> assignStaff(
+          String shiftId, int version, List<String> staffIds) =>
+      apiCallVoid(() => _dio.post<dynamic>(
+          '/api/v1/shifts/$shiftId/assignments',
+          data: {'version': version, 'staffIds': staffIds}));
+  @override
+  Future<void> replaceAssignedStaff(
+          String shiftId, String assignmentId, int version, String staffId) =>
+      apiCallVoid(() => _dio.patch<dynamic>(
+          '/api/v1/shifts/$shiftId/assignments/$assignmentId',
+          data: {'version': version, 'staffId': staffId}));
+  @override
+  Future<void> cancelAssignment(
+          String shiftId, String assignmentId, int version) =>
+      apiCallVoid(() => _dio.delete<dynamic>(
+          '/api/v1/shifts/$shiftId/assignments/$assignmentId',
+          queryParameters: {'version': version}));
   @override
   Future<AccessAnalytics> accessAnalytics(Map<String, dynamic> query) =>
       apiCall(

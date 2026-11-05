@@ -33,7 +33,7 @@ class KioskReadyScreen extends StatelessWidget {
         final panel = Container(
           padding: const EdgeInsets.all(28),
           decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(color: AppColors.border)),
           child: Column(
@@ -49,7 +49,7 @@ class KioskReadyScreen extends StatelessWidget {
                     style:
                         AppTypography.h2.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 18),
-                const Text('Chỉ một người đứng trước camera',
+                Text('Chỉ một người đứng trước camera',
                     style: AppTypography.bodyM),
                 const SizedBox(height: 32),
                 if (!connected) ...[
@@ -57,7 +57,7 @@ class KioskReadyScreen extends StatelessWidget {
                       onPressed: busy ? null : onConnect,
                       child: const Text('Kết nối thiết bị')),
                   const SizedBox(height: 12),
-                  const Text('Nhập thông tin kiosk do quản trị viên cấp.',
+                  Text('Nhập thông tin kiosk do quản trị viên cấp.',
                       style: AppTypography.caption),
                 ] else ...[
                   if (faceEnabled) ...[
@@ -75,7 +75,7 @@ class KioskReadyScreen extends StatelessWidget {
                       style: AppTypography.caption),
                   if (!faceEnabled) ...[
                     const SizedBox(height: 12),
-                    const Text(
+                    Text(
                         'Nhận diện khuôn mặt chưa khả dụng trên thiết bị này.',
                         style: AppTypography.caption),
                   ],

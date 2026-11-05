@@ -7,7 +7,8 @@ import 'pagination_bar.dart';
 import 'state_views.dart';
 
 class StaffColumn<T> {
-  const StaffColumn({required this.header, required this.cell, this.minWidth = 100});
+  const StaffColumn(
+      {required this.header, required this.cell, this.minWidth = 100});
 
   final String header;
   final Widget Function(T row) cell;
@@ -43,7 +44,8 @@ class StaffTable<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     if (rows.isEmpty) return Card(child: empty);
 
-    final compact = MediaQuery.sizeOf(context).width < AppSizes.compactBreakpoint;
+    final compact =
+        MediaQuery.sizeOf(context).width < AppSizes.compactBreakpoint;
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -72,33 +74,37 @@ class _WideTable<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(minWidth: MediaQuery.sizeOf(context).width - AppSpacing.xl * 2 - 4),
-        child: DataTable(
-          headingTextStyle: AppTypography.caption.copyWith(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w600,
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: DataTable(
+            headingTextStyle: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+            dataTextStyle: AppTypography.bodyM,
+            headingRowColor: WidgetStatePropertyAll(AppColors.neutralSurface),
+            showCheckboxColumn: false,
+            columns: [
+              for (final c in table.columns) DataColumn(label: Text(c.header)),
+              if (table.rowActions != null) const DataColumn(label: Text('')),
+            ],
+            rows: [
+              for (final row in table.rows)
+                DataRow(
+                  onSelectChanged: table.onRowTap == null
+                      ? null
+                      : (_) => table.onRowTap!(row),
+                  cells: [
+                    for (final c in table.columns) DataCell(c.cell(row)),
+                    if (table.rowActions != null)
+                      DataCell(Row(children: table.rowActions!(row))),
+                  ],
+                ),
+            ],
           ),
-          dataTextStyle: AppTypography.bodyM,
-          headingRowColor: const WidgetStatePropertyAll(AppColors.neutralSurface),
-          showCheckboxColumn: false,
-          columns: [
-            for (final c in table.columns) DataColumn(label: Text(c.header)),
-            if (table.rowActions != null) const DataColumn(label: Text('')),
-          ],
-          rows: [
-            for (final row in table.rows)
-              DataRow(
-                onSelectChanged: table.onRowTap == null ? null : (_) => table.onRowTap!(row),
-                cells: [
-                  for (final c in table.columns) DataCell(c.cell(row)),
-                  if (table.rowActions != null)
-                    DataCell(Row(children: table.rowActions!(row))),
-                ],
-              ),
-          ],
         ),
       ),
     );
@@ -116,7 +122,9 @@ class _CardList<T> extends StatelessWidget {
         for (var i = 0; i < table.rows.length; i++) ...[
           if (i > 0) const Divider(height: 1),
           InkWell(
-            onTap: table.onRowTap == null ? null : () => table.onRowTap!(table.rows[i]),
+            onTap: table.onRowTap == null
+                ? null
+                : () => table.onRowTap!(table.rows[i]),
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Column(
@@ -132,7 +140,8 @@ class _CardList<T> extends StatelessWidget {
                             width: 110,
                             child: Text(
                               c.header,
-                              style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+                              style: AppTypography.caption
+                                  .copyWith(color: AppColors.textSecondary),
                             ),
                           ),
                           Expanded(child: c.cell(table.rows[i])),
@@ -142,7 +151,9 @@ class _CardList<T> extends StatelessWidget {
                   if (table.rowActions != null)
                     Padding(
                       padding: const EdgeInsets.only(top: AppSpacing.sm),
-                      child: Wrap(spacing: AppSpacing.sm, children: table.rowActions!(table.rows[i])),
+                      child: Wrap(
+                          spacing: AppSpacing.sm,
+                          children: table.rowActions!(table.rows[i])),
                     ),
                 ],
               ),
@@ -155,12 +166,17 @@ class _CardList<T> extends StatelessWidget {
 }
 
 class StaffEmpty extends StatelessWidget {
-  const StaffEmpty({super.key, required this.title, this.message, this.icon = Icons.inbox_outlined});
+  const StaffEmpty(
+      {super.key,
+      required this.title,
+      this.message,
+      this.icon = Icons.inbox_outlined});
 
   final String title;
   final String? message;
   final IconData icon;
 
   @override
-  Widget build(BuildContext context) => EmptyState(icon: icon, title: title, message: message);
+  Widget build(BuildContext context) =>
+      EmptyState(icon: icon, title: title, message: message);
 }

@@ -57,7 +57,7 @@ class _CreateVisitorDialogState extends ConsumerState<_CreateVisitorDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Thêm khách ngoài', style: AppTypography.h3),
+      title: Text('Thêm khách ngoài', style: AppTypography.h3),
       content: SizedBox(
         width: 420,
         child: Form(

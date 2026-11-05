@@ -29,13 +29,15 @@ class AdminMetricCard extends StatelessWidget {
     super.key,
     required this.label,
     required this.value,
-    this.valueColor = AppColors.textPrimary,
+    this.valueColor,
     this.footer,
   });
 
   final String label;
   final String value;
-  final Color valueColor;
+
+  /// Defaults to the theme's primary text color.
+  final Color? valueColor;
   final Widget? footer;
 
   @override
@@ -52,7 +54,7 @@ class AdminMetricCard extends StatelessWidget {
               Text(
                 value,
                 style: AppTypography.h2.copyWith(
-                  color: valueColor,
+                  color: valueColor ?? AppColors.textPrimary,
                   fontSize: 24,
                   fontWeight: FontWeight.w700,
                 ),
@@ -68,12 +70,14 @@ class AdminProgressBar extends StatelessWidget {
   const AdminProgressBar({
     super.key,
     required this.value,
-    this.color = AppColors.action,
+    this.color,
     this.height = 8,
   });
 
   final double value;
-  final Color color;
+
+  /// Defaults to the action color.
+  final Color? color;
   final double height;
 
   @override
@@ -83,7 +87,7 @@ class AdminProgressBar extends StatelessWidget {
           value: value.clamp(0, 1),
           minHeight: height,
           backgroundColor: AppColors.neutralSurface,
-          valueColor: AlwaysStoppedAnimation(color),
+          valueColor: AlwaysStoppedAnimation(color ?? AppColors.action),
         ),
       );
 }

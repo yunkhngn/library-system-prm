@@ -89,10 +89,10 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                               // Four modules of white quiet zone, even for dense JWTs.
                               padding: EdgeInsets.all(size * 4 / (modules + 8)),
                               backgroundColor: AppColors.surface,
-                              eyeStyle: const QrEyeStyle(
+                              eyeStyle: QrEyeStyle(
                                   eyeShape: QrEyeShape.square,
                                   color: AppColors.navy),
-                              dataModuleStyle: const QrDataModuleStyle(
+                              dataModuleStyle: QrDataModuleStyle(
                                   dataModuleShape: QrDataModuleShape.square,
                                   color: AppColors.navy),
                               semanticsLabel:
@@ -144,10 +144,10 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
               ),
               const SizedBox(height: 20),
               if (state.loading)
-                const Text('Đang tạo mã QR…', style: AppTypography.caption)
+                Text('Đang tạo mã QR…', style: AppTypography.caption)
               else if (state.isActive)
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  const Icon(Icons.schedule,
+                  Icon(Icons.schedule,
                       size: 16, color: AppColors.warning),
                   const SizedBox(width: AppSpacing.sm),
                   Text('Còn ${state.remainingSeconds} giây',
@@ -156,7 +156,7 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                           color: AppColors.warning)),
                 ])
               else if (state.error == null)
-                const Text('Mã cũ không còn sử dụng được.',
+                Text('Mã cũ không còn sử dụng được.',
                     style: AppTypography.caption, textAlign: TextAlign.center),
             ]),
           )),
@@ -185,13 +185,13 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
               )),
           const SizedBox(height: AppSpacing.md),
         ],
-        const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text('Đưa mã này vào khung quét tại kiosk ở cổng thư viện.',
                 style: AppTypography.bodyM)),
         const SizedBox(height: AppSpacing.lg),
-        const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12),
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Text('Mã chỉ dùng được một lần và tự hết hạn sau 30 giây.',
                 style: AppTypography.caption)),
       ],

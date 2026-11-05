@@ -1,3 +1,5 @@
+import '../../../shared/models/actor.dart';
+
 class AdminAccount {
   const AdminAccount(
       {required this.id,
@@ -84,6 +86,24 @@ class AdminShift {
   final DateTime startsAt, endsAt;
   final int version, assignmentCount;
   final String? cancellationReason;
+  bool get isActive => status == 'ACTIVE';
+}
+
+class AdminAssignment {
+  const AdminAssignment(
+      {required this.id,
+      required this.staff,
+      required this.status,
+      required this.version});
+  factory AdminAssignment.fromJson(Map<String, dynamic> json) =>
+      AdminAssignment(
+          id: json['id'].toString(),
+          staff: Actor.fromJson(json['staff'] as Map<String, dynamic>),
+          status: json['status']?.toString() ?? '',
+          version: (json['version'] as num?)?.toInt() ?? 0);
+  final String id, status;
+  final Actor staff;
+  final int version;
 }
 
 class AccessBucket {

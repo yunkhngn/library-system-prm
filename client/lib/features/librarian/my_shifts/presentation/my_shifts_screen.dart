@@ -113,7 +113,7 @@ class _WeekNavigator extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spinner = loading
-        ? const SizedBox(
+        ? SizedBox(
             width: 16,
             height: 16,
             child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.action),

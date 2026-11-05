@@ -73,9 +73,9 @@ class AccessAnalyticsBody extends StatelessWidget {
                         children: [
                           const AdminSectionTitle('Lượt vào và lượt ra'),
                           const SizedBox(height: 8),
-                          const Wrap(spacing: 24, children: [
+                          Wrap(spacing: 24, children: [
                             _Legend('Lượt vào', AppColors.action),
-                            _Legend('Lượt ra', exitColor),
+                            const _Legend('Lượt ra', exitColor),
                           ]),
                           const SizedBox(height: 20),
                           Expanded(child: _chart()),
@@ -100,7 +100,7 @@ class AccessAnalyticsBody extends StatelessWidget {
                           _method('Mã QR', 'QR', AppColors.success),
                           _method('Thủ công', 'MANUAL', AppColors.warning),
                           if (data.totalMethodCheckIns == 0)
-                            const Text('Chưa có lượt vào trong khoảng này.',
+                            Text('Chưa có lượt vào trong khoảng này.',
                                 style: AppTypography.caption),
                         ],
                       ),
@@ -116,7 +116,7 @@ class AccessAnalyticsBody extends StatelessWidget {
   Widget _chart() {
     if (data.buckets.isEmpty ||
         data.buckets.every((b) => b.checkIns == 0 && b.checkOuts == 0)) {
-      return const Center(
+      return Center(
           child: Text('Chưa có dữ liệu ra vào', style: AppTypography.caption));
     }
     final maxValue = data.buckets.fold<int>(

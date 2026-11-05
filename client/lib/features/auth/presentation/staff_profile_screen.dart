@@ -29,7 +29,7 @@ class StaffProfileScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Hồ sơ tài khoản', style: AppTypography.h1),
+              Text('Hồ sơ tài khoản', style: AppTypography.h1),
               const SizedBox(height: AppSpacing.lg),
               Card(
                 child: Padding(

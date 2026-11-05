@@ -151,7 +151,7 @@ class _DashboardBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
-            const Expanded(child: Text('Mới vào gần đây', style: AppTypography.h3)),
+            Expanded(child: Text('Mới vào gần đây', style: AppTypography.h3)),
             AppButton(
               label: 'Xem tất cả',
               variant: AppButtonVariant.link,
@@ -165,9 +165,9 @@ class _DashboardBody extends ConsumerWidget {
           onRetry: () => ref.invalidate(_recentOccupantsProvider),
           data: (items) {
             if (items.isEmpty) {
-              return const Card(
+              return Card(
                 child: Padding(
-                  padding: EdgeInsets.all(AppSpacing.lg),
+                  padding: const EdgeInsets.all(AppSpacing.lg),
                   child: Text('Hiện không có ai trong thư viện.', style: AppTypography.bodyM),
                 ),
               );
@@ -284,7 +284,7 @@ class _QuickActions extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: todayShifts.when(
               loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const Text('Không tải được ca trực.', style: AppTypography.bodyM),
+              error: (_, __) => Text('Không tải được ca trực.', style: AppTypography.bodyM),
               data: (items) {
                 final live = items.where((s) => !s.isCancelled).toList();
                 if (live.isEmpty) {

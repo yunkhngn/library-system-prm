@@ -103,8 +103,8 @@ class _SessionDetail extends StatelessWidget {
                         tone: BadgeTone.success),
                   ]))),
       const SizedBox(height: AppSpacing.xl),
-      const Padding(
-          padding: EdgeInsets.only(left: AppSpacing.xs, bottom: AppSpacing.sm),
+      Padding(
+          padding: const EdgeInsets.only(left: AppSpacing.xs, bottom: AppSpacing.sm),
           child: Text('Lịch sử ghi nhận', style: AppTypography.h3)),
       _TimelineEvent(
         title: 'Ghi nhận vào',
