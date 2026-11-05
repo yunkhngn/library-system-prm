@@ -15,3 +15,13 @@ Future<T> apiCall<T>(
     throw ApiException.fromDio(e);
   }
 }
+
+/// Same error mapping as [apiCall] for requests whose body is ignored or
+/// absent (204 No Content).
+Future<void> apiCallVoid(Future<Response<dynamic>> Function() request) async {
+  try {
+    await request();
+  } on DioException catch (e) {
+    throw ApiException.fromDio(e);
+  }
+}

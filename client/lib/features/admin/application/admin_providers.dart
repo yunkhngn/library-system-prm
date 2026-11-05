@@ -106,6 +106,21 @@ final shiftsProvider = FutureProvider.autoDispose<Paged<AdminShift>>((ref) {
   });
 });
 
+final adminShiftProvider = FutureProvider.autoDispose
+    .family<AdminShift, String>(
+        (ref, id) => ref.watch(adminRepositoryProvider).getShift(id));
+final shiftAssignmentsProvider = FutureProvider.autoDispose
+    .family<List<AdminAssignment>, String>((ref, shiftId) =>
+        ref.watch(adminRepositoryProvider).listActiveAssignments(shiftId));
+
+/// Only ACTIVE librarians can be assigned; the backend rejects anyone else.
+final assignableLibrariansProvider =
+    FutureProvider.autoDispose<List<AdminAccount>>((ref) async {
+  final page = await ref.watch(adminRepositoryProvider).listAccounts(
+      {'role': 'LIBRARIAN', 'status': 'ACTIVE', 'page': 0, 'size': 100});
+  return page.items;
+});
+
 final analyticsQueryProvider = StateProvider.autoDispose<AnalyticsQuery>((_) {
   final now = DateTime.now();
   final to = Fmt.startOfNextVietnamDay(now);
@@ -204,6 +219,29 @@ class AdminActions extends AutoDisposeAsyncNotifier<void> {
   Future<AdminShift> cancelShift(String id, Map<String, dynamic> body) => _run(
       () => _repository.cancelShift(id, body),
       () => ref.invalidate(shiftsProvider));
+  Future<void> assignStaff(
+          String shiftId, int version, List<String> staffIds) =>
+      _run(() => _repository.assignStaff(shiftId, version, staffIds),
+          () => refreshShift(shiftId));
+  Future<void> replaceAssignedStaff(
+          String shiftId, AdminAssignment assignment, String staffId) =>
+      _run(
+          () => _repository.replaceAssignedStaff(
+              shiftId, assignment.id, assignment.version, staffId),
+          () => refreshShift(shiftId));
+  Future<void> cancelAssignment(String shiftId, AdminAssignment assignment) =>
+      _run(
+          () => _repository.cancelAssignment(
+              shiftId, assignment.id, assignment.version),
+          () => refreshShift(shiftId));
+
+  /// Every assignment change bumps `shift.version`, so the next request needs
+  /// fresh data. Also call this after a failure such as VERSION_CONFLICT.
+  void refreshShift(String shiftId) {
+    ref.invalidate(shiftsProvider);
+    ref.invalidate(adminShiftProvider(shiftId));
+    ref.invalidate(shiftAssignmentsProvider(shiftId));
+  }
 }
 
 final adminActionsProvider =
