@@ -244,13 +244,13 @@ class _HomeContent extends StatelessWidget {
               header: true,
               child: InkWell(
                 onTap: () => context.go(Routes.studentHistory),
-                child: const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                     child:
                         Text('Lượt ra vào gần đây', style: AppTypography.h3)),
               )),
           if (data.recent.isEmpty)
-            const _HomeCard(
+            _HomeCard(
                 child: Text('Chưa có lượt ra vào trong 30 ngày gần đây.',
                     style: AppTypography.caption))
           else

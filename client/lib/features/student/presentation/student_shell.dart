@@ -60,7 +60,7 @@ class StudentShell extends ConsumerWidget {
                 constraints: const BoxConstraints(minHeight: 72),
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     color: AppColors.surface,
                     border:
                         Border(bottom: BorderSide(color: AppColors.border))),
@@ -77,7 +77,7 @@ class StudentShell extends ConsumerWidget {
               ),
               Expanded(child: child),
               Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                     color: AppColors.surface,
                     border: Border(top: BorderSide(color: AppColors.border))),
                 child: SafeArea(

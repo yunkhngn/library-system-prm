@@ -88,7 +88,7 @@ class PageScaffold extends StatelessWidget {
         );
 
         final constrained = Align(
-          alignment: Alignment.topLeft,
+          alignment: Alignment.topCenter,
           child: ConstrainedBox(
             constraints: BoxConstraints(maxWidth: maxWidth),
             child: content,

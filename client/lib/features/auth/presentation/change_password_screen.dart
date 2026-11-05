@@ -19,7 +19,7 @@ class ChangePasswordScreen extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text('Đổi mật khẩu', style: AppTypography.h1),
+              Text('Đổi mật khẩu', style: AppTypography.h1),
               const SizedBox(height: AppSpacing.lg),
               Card(
                 child: Padding(

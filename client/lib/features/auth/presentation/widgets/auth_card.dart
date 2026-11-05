@@ -27,13 +27,13 @@ class AuthCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.local_library_outlined, size: 40, color: AppColors.navy),
+                      Icon(Icons.local_library_outlined, size: 40, color: AppColors.navy),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         'Library Access',
                         style: AppTypography.h3.copyWith(color: AppColors.navy),
                       ),
-                      const Text('Hệ thống ghi nhận ra vào thư viện', style: AppTypography.caption),
+                      Text('Hệ thống ghi nhận ra vào thư viện', style: AppTypography.caption),
                       const SizedBox(height: AppSpacing.lg),
                       Text(title, style: AppTypography.h2),
                       if (subtitle != null) ...[

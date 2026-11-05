@@ -106,7 +106,7 @@ class _StudentFaceEnrollmentScreenState
                         Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const CircleAvatar(
+                              CircleAvatar(
                                   radius: 24,
                                   backgroundColor: AppColors.infoSurface,
                                   child: Icon(Icons.face_outlined,
@@ -148,8 +148,8 @@ class _StudentFaceEnrollmentScreenState
                   message: _selectionError ?? state.message,
                   tone: AlertTone.warning),
               if (state.enrollment?.isEnrolled == true)
-                const Padding(
-                    padding: EdgeInsets.only(top: AppSpacing.sm),
+                Padding(
+                    padding: const EdgeInsets.only(top: AppSpacing.sm),
                     child: Text(
                         'Đăng ký hiện có vẫn được giữ khi gửi bộ ảnh mới thất bại.',
                         style: AppTypography.caption)),
@@ -193,7 +193,7 @@ class _StudentFaceEnrollmentScreenState
                         child: Column(children: [
                           Container(
                               height: 180,
-                              decoration: const BoxDecoration(
+                              decoration: BoxDecoration(
                                   color: AppColors.textPrimary,
                                   borderRadius: AppRadius.cardBorder),
                               child: Center(
@@ -206,7 +206,7 @@ class _StudentFaceEnrollmentScreenState
                                           borderRadius:
                                               BorderRadius.circular(62))))),
                           const SizedBox(height: AppSpacing.md),
-                          const Text('Đưa khuôn mặt vào giữa khung',
+                          Text('Đưa khuôn mặt vào giữa khung',
                               style: AppTypography.label),
                           const SizedBox(height: AppSpacing.sm),
                         ]))),
@@ -225,7 +225,7 @@ class _StudentFaceEnrollmentScreenState
                             _accepted = false;
                           })),
               const SizedBox(height: AppSpacing.md),
-              const Text('Chỉ tiếp tục khi bạn đồng ý với quy trình nhận diện.',
+              Text('Chỉ tiếp tục khi bạn đồng ý với quy trình nhận diện.',
                   style: AppTypography.caption),
             ] else ...[
               if (state.busy)
@@ -294,7 +294,7 @@ class _StudentFaceEnrollmentScreenState
                       ? controller.submit
                       : null),
               const SizedBox(height: AppSpacing.sm),
-              const Text(
+              Text(
                   'Chụp rõ, đủ sáng, mỗi ảnh chỉ có một người. Máy chủ sẽ kiểm tra bộ ảnh sau khi gửi.',
                   style: AppTypography.caption),
             ],

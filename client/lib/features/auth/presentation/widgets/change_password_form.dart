@@ -103,7 +103,7 @@ class _ChangePasswordFormState extends ConsumerState<ChangePasswordForm> {
                   style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
                 ),
               ),
-              const Tooltip(
+              Tooltip(
                 message: PasswordPolicy.byteTooltip,
                 child: Icon(Icons.info_outline, size: 16, color: AppColors.textSecondary),
               ),

@@ -325,7 +325,7 @@ class _ManualAccessScreenState extends ConsumerState<ManualAccessScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Đối tượng', style: AppTypography.h3),
+        Text('Đối tượng', style: AppTypography.h3),
         const SizedBox(height: AppSpacing.md),
         AppSegmented<_Kind>(
           segments: const [
@@ -419,7 +419,7 @@ class _ManualAccessScreenState extends ConsumerState<ManualAccessScreen> {
       children: [
         Text(_subjectDisplay, style: AppTypography.label),
         const SizedBox(height: AppSpacing.md),
-        const Text('Hành động', style: AppTypography.h3),
+        Text('Hành động', style: AppTypography.h3),
         const SizedBox(height: AppSpacing.md),
         _ActionCard(
           selected: _action == AccessAction.checkIn,
@@ -449,7 +449,7 @@ class _ManualAccessScreenState extends ConsumerState<ManualAccessScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Lý do', style: AppTypography.h3),
+        Text('Lý do', style: AppTypography.h3),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
           label: 'Lý do ghi nhận',
@@ -474,7 +474,7 @@ class _ManualAccessScreenState extends ConsumerState<ManualAccessScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Text('Xác nhận', style: AppTypography.h3),
+        Text('Xác nhận', style: AppTypography.h3),
         const SizedBox(height: AppSpacing.md),
         Text(
           '${action?.label ?? ''} cho $_subjectDisplay',

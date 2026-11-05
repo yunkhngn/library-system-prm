@@ -161,7 +161,7 @@ class _FaceCaptureCameraState extends State<FaceCaptureCamera>
                               aspectRatio: camera.value.aspectRatio,
                               child: CameraPreview(camera))),
                     if (_starting)
-                      const CircularProgressIndicator(color: AppColors.surface),
+                      CircularProgressIndicator(color: AppColors.surface),
                     if (!_starting && camera != null)
                       IgnorePointer(
                           child: Container(
@@ -172,11 +172,11 @@ class _FaceCaptureCameraState extends State<FaceCaptureCamera>
                                   border: Border.all(
                                       color: AppColors.surface, width: 2)))),
                     if (!_starting && camera == null)
-                      const Icon(Icons.no_photography_outlined,
+                      Icon(Icons.no_photography_outlined,
                           size: 48, color: AppColors.surface),
                   ])))),
       const SizedBox(height: AppSpacing.sm),
-      const Text('Đưa khuôn mặt vào giữa khung',
+      Text('Đưa khuôn mặt vào giữa khung',
           style: AppTypography.label, textAlign: TextAlign.center),
       if (_error != null) ...[
         const SizedBox(height: AppSpacing.sm),

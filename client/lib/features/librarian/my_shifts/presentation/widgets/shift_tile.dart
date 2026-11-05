@@ -85,7 +85,7 @@ class ShiftTile extends StatelessWidget {
               else if (today)
                 const StatusBadge.today(),
               const SizedBox(width: AppSpacing.xs),
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+              Icon(Icons.chevron_right, color: AppColors.textSecondary),
             ],
           ),
         ),

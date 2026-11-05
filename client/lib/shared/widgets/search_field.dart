@@ -64,7 +64,7 @@ class _AppSearchFieldState extends State<AppSearchField> {
           hintText: widget.hint,
           isDense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-          prefixIcon: const Icon(Icons.search, size: 20, color: AppColors.textSecondary),
+          prefixIcon: Icon(Icons.search, size: 20, color: AppColors.textSecondary),
           suffixIcon: _controller.text.isEmpty
               ? null
               : IconButton(

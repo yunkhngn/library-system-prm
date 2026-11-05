@@ -45,7 +45,7 @@ class RecognitionConfigBody extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(18),
                           decoration: BoxDecoration(
-                              color: const Color(0xFFFFFAEB),
+                              color: AppColors.warningSurface,
                               borderRadius: BorderRadius.circular(10)),
                           child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,7 +103,7 @@ class RecognitionConfigBody extends StatelessWidget {
               child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Nhận diện khuôn mặt',
+                    Text('Nhận diện khuôn mặt',
                         style: AppTypography.caption),
                     const SizedBox(height: 14),
                     Text(_configured ? 'Đã cấu hình' : 'Chưa cấu hình',

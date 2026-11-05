@@ -17,7 +17,7 @@ class StudentChangePasswordScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          const Text('Đổi mật khẩu', style: AppTypography.h2),
+          Text('Đổi mật khẩu', style: AppTypography.h2),
           const SizedBox(height: AppSpacing.lg),
           Card(
               child: Padding(

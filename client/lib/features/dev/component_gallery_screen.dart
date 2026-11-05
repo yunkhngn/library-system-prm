@@ -25,9 +25,9 @@ class ComponentGalleryScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Foundations & Shared components', style: AppTypography.h1),
+            Text('Foundations & Shared components', style: AppTypography.h1),
             const SizedBox(height: AppSpacing.lg),
-            const _Section('01 Màu sắc', [
+            _Section('01 Màu sắc', [
               Wrap(
                 spacing: AppSpacing.md,
                 runSpacing: AppSpacing.md,
@@ -45,7 +45,7 @@ class ComponentGalleryScreen extends StatelessWidget {
                 ],
               ),
             ]),
-            const _Section('02 Kiểu chữ · Be Vietnam Pro', [
+            _Section('02 Kiểu chữ · Be Vietnam Pro', [
               Text('Đăng ký nhận diện khuôn mặt', style: AppTypography.display),
               Text('Số người đang trong thư viện', style: AppTypography.h1),
               Text('Xác nhận hủy phân công', style: AppTypography.h2),

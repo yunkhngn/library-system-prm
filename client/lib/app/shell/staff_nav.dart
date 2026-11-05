@@ -14,7 +14,7 @@ class StaffNavItem {
 List<StaffNavItem> staffNavFor(UserRole role) {
   const shared = [
     StaffNavItem(
-        'Người đang trong thư viện', Icons.groups_outlined, Routes.occupants),
+        'Người trong thư viện', Icons.groups_outlined, Routes.occupants),
     StaffNavItem(
         'Ghi nhận thủ công', Icons.edit_note_outlined, Routes.manualAccess),
     StaffNavItem('Khách ngoài', Icons.badge_outlined, Routes.visitors),

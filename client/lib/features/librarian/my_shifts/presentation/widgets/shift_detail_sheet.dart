@@ -61,7 +61,7 @@ class ShiftDetail extends ConsumerWidget {
         if (item.isShiftCancelled && (shift.cancellationReason?.isNotEmpty ?? false))
           LabeledValue(label: 'Lý do hủy', value: shift.cancellationReason),
         const Divider(height: AppSpacing.xl),
-        const Text('Thủ thư cùng ca', style: AppTypography.h3),
+        Text('Thủ thư cùng ca', style: AppTypography.h3),
         const SizedBox(height: AppSpacing.sm),
         _Colleagues(shiftId: shift.id, myId: myId),
       ],

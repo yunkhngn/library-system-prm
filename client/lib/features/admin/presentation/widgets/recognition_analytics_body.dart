@@ -83,8 +83,8 @@ class RecognitionAnalyticsBody extends StatelessWidget {
                       const AdminSectionTitle('Kết quả nhận diện'),
                       const SizedBox(height: 18),
                       if (data.totalAttempts == 0)
-                        const Padding(
-                            padding: EdgeInsets.only(bottom: 18),
+                        Padding(
+                            padding: const EdgeInsets.only(bottom: 18),
                             child: Text(
                                 'Chưa có lượt nhận diện trong khoảng thời gian này.',
                                 style: AppTypography.caption)),

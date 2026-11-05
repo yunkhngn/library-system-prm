@@ -63,7 +63,7 @@ class VisitorDetailScreen extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             _ProfileCard(visitor: v, inside: inside),
             const SizedBox(height: AppSpacing.lg),
-            const Text('Lịch sử ra vào', style: AppTypography.h3),
+            Text('Lịch sử ra vào', style: AppTypography.h3),
             const SizedBox(height: AppSpacing.sm),
             AsyncValueView(
               value: history,

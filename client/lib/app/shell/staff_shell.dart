@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_typography.dart';
+import '../../shared/widgets/theme_toggle_button.dart';
 import '../../features/auth/application/session_controller.dart';
 import '../../features/auth/data/models/user.dart';
 import '../../features/auth/presentation/logout_dialog.dart';
@@ -63,7 +64,7 @@ class _Sidebar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: AppColors.navy,
+        color: AppColors.sidebar,
         child: SafeArea(
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -94,7 +95,7 @@ class _Sidebar extends StatelessWidget {
                         child: Text(
                           'Quản trị',
                           style: AppTypography.caption
-                              .copyWith(color: const Color(0xFFB6C7DA)),
+                              .copyWith(color: AppColors.sidebarMuted),
                         ),
                       ),
                     ],
@@ -117,19 +118,24 @@ class _NavTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.only(bottom: 6),
         child: SizedBox(
-          height: 36,
+          height: 40,
           child: ListTile(
             dense: true,
+            visualDensity: VisualDensity.compact,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+            horizontalTitleGap: 12,
+            minLeadingWidth: 18,
             selected: selected,
-            selectedTileColor: const Color(0xFF2C537A),
+            selectedTileColor: AppColors.sidebarSelected,
             shape: const RoundedRectangleBorder(
                 borderRadius: AppRadius.controlBorder),
             leading: Icon(item.icon, size: 18, color: Colors.white),
             title: Text(
               item.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: AppTypography.caption.copyWith(
                 color: Colors.white,
                 fontSize: 13,
@@ -159,7 +165,7 @@ class _TopBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) => DecoratedBox(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(bottom: BorderSide(color: AppColors.border)),
         ),
@@ -179,6 +185,8 @@ class _TopBar extends ConsumerWidget {
                 if (!compact)
                   Text(title, style: AppTypography.h3.copyWith(fontSize: 20)),
                 const Spacer(),
+                const ThemeToggleButton(),
+                const SizedBox(width: 8),
                 PopupMenuButton<String>(
                   tooltip: 'Tài khoản',
                   position: PopupMenuPosition.under,

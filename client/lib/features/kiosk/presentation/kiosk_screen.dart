@@ -45,8 +45,8 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
           child: Column(children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-          decoration: const BoxDecoration(
-              color: Colors.white,
+          decoration: BoxDecoration(
+              color: AppColors.surface,
               border: Border(bottom: BorderSide(color: AppColors.border))),
           child: Row(children: [
             Expanded(
@@ -90,7 +90,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
     }
     if (state.phase == KioskPhase.failure) {
       return Column(children: [
-        const Text('Chưa thể ghi nhận', style: AppTypography.h1),
+        Text('Chưa thể ghi nhận', style: AppTypography.h1),
         Text(state.error?.userMessage ?? 'Vui lòng thử lại.'),
         FilledButton(
             onPressed:
@@ -107,7 +107,7 @@ class _KioskScreenState extends ConsumerState<KioskScreen> {
         Padding(
             padding: const EdgeInsets.only(bottom: 16),
             child: Text(state.error!.userMessage,
-                style: const TextStyle(color: AppColors.error))),
+                style: TextStyle(color: AppColors.error))),
       KioskReadyScreen(
         camera: state.session != null && state.session!.faceEnabled && !_qrOpen
             ? KioskCamera(

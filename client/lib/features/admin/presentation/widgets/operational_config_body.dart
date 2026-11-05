@@ -47,7 +47,7 @@ class OperationalConfigBody extends StatelessWidget {
           card(left, 218, [
             const AdminSectionTitle('Giờ mở cửa'),
             const SizedBox(height: 4),
-            const Text('Thời gian cho phép ghi nhận vào',
+            Text('Thời gian cho phép ghi nhận vào',
                 style: AppTypography.caption),
             const SizedBox(height: 14),
             for (var day = 1; day <= 7; day++)
@@ -67,7 +67,7 @@ class OperationalConfigBody extends StatelessWidget {
             const AdminSectionTitle('Lượt ra vào'),
             const SizedBox(height: 20),
             Wrap(spacing: 16, runSpacing: 8, children: [
-              const Text('Thời gian lưu lại tối đa',
+              Text('Thời gian lưu lại tối đa',
                   style: AppTypography.bodyM),
               Text(
                   config.maxSessionDurationMinutes == null
@@ -78,7 +78,7 @@ class OperationalConfigBody extends StatelessWidget {
             ]),
             const SizedBox(height: 16),
             Row(children: [
-              const Expanded(
+              Expanded(
                   child: Text('Khoảng cách giữa hai lần quét',
                       style: AppTypography.bodyM)),
               const SizedBox(width: 12),
@@ -222,7 +222,7 @@ class _OpeningHoursDialogState extends State<_OpeningHoursDialog> {
                                   ? 'Giờ đóng cửa phải khác giờ mở cửa'
                                   : null)),
                       const SizedBox(height: 12),
-                      const Text(
+                      Text(
                           'Nếu giờ đóng cửa sớm hơn giờ mở cửa, ca kéo dài qua đêm.',
                           style: AppTypography.caption),
                     ],
