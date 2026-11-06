@@ -1464,7 +1464,7 @@ Required tests:
 
 Operation: `recordFaceAccess` · Host: Backend · Permissions: KIOSK · Task 11 · Retry: `IDEMPOTENCY_KEY`.
 
-MP4 clip: 1–3 seconds, ≤10MiB, ≤1280x720 and 30fps; no audio. Backend validates the challenge and sends its stored DB instructions to AI. Only matched+livenessPassed+real+correct modelVersion reaches AccessService. Consume the challenge only for a determined attempt outcome; AI timeout records no session, returns 503, and requires QR/a new challenge. Do not accept studentId for client-selected identity.
+MP4 (mobile) or WebM (browser) clip, detected from the file bytes: 1–3 seconds, ≤10MiB, ≤1280x720 and 30fps; no audio. Backend validates the challenge and sends its stored DB instructions to AI. Only matched+livenessPassed+real+correct modelVersion reaches AccessService. Consume the challenge only for a determined attempt outcome; AI timeout records no session, returns 503, and requires QR/a new challenge. Do not accept studentId for client-selected identity.
 
 | Location | Name | Required | Type / limits |
 |---|---|---|---|
@@ -1869,7 +1869,7 @@ All DTOs set additionalProperties=false; requests/responses use separate types. 
 | `maxImageBytes` | Yes | `{"type":"integer","format":"int64","enum":[5242880]}` |
 | `maxTotalImageBytes` | Yes | `{"type":"integer","format":"int64","enum":[26214400]}` |
 | `maxImagePixels` | Yes | `{"type":"integer","format":"int64","enum":[16000000]}` |
-| `clipMimeTypes` | Yes | `{"type":"array","items":{"type":"string","enum":["video/mp4"]}}` |
+| `clipMimeTypes` | Yes | `{"type":"array","items":{"type":"string","enum":["video/mp4","video/webm"]}}` |
 | `maxClipBytes` | Yes | `{"type":"integer","format":"int64","enum":[10485760]}` |
 | `minClipDurationSeconds` | Yes | `{"type":"number","format":"double","enum":[1]}` |
 | `maxClipDurationSeconds` | Yes | `{"type":"number","format":"double","enum":[3]}` |

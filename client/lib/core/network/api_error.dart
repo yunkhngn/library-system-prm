@@ -98,6 +98,7 @@ class ApiException implements Exception {
     'IDEMPOTENCY_KEY_REQUIRED': 'Thiếu khóa xác nhận yêu cầu. Vui lòng thử lại.',
     'INVALID_QUERY': 'Bộ lọc không hợp lệ. Vui lòng kiểm tra lại.',
     'INVALID_REQUEST': 'Yêu cầu không hợp lệ. Vui lòng kiểm tra lại.',
+    'VIDEO_FORMAT_UNSUPPORTED': 'Trình duyệt hoặc thiết bị này ghi video ở định dạng chưa được hỗ trợ. Hãy dùng QR hoặc thiết bị khác.',
     'INVALID_TIME_RANGE': 'Thời gian kết thúc ca trực phải sau thời gian bắt đầu.',
     'SHIFT_CANCELLED': 'Ca trực đã bị hủy, không thể thay đổi phân công.',
     'SHIFT_OVERLAP': 'Thủ thư đã có ca trực khác trùng thời gian.',

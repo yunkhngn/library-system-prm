@@ -5,6 +5,7 @@ from typing import Tuple
 from PIL import Image, ImageFile
 from app.core.security import AiApiException
 from app.core.settings import settings
+from app.services.video_io import clip_duration_seconds, detect_container, temp_clip
 
 ImageFile.LOAD_TRUNCATED_IMAGES = False
 # Limit max pixels to prevent DecompressionBomb attacks
@@ -79,11 +80,16 @@ def validate_and_decode_image(content: bytes, filename: str = "image") -> Tuple[
         )
 
 
+MIN_CLIP_SECONDS, MAX_CLIP_SECONDS = 0.5, 5.0
+_MAX_PROBE_FRAMES = 400  # stop decoding here: anything this long is rejected anyway
+
+
 def validate_video_clip(content: bytes, filename: str = "clip.mp4") -> float:
     """
-    Validates MP4 video clip byte stream.
-    Enforces <= 10 MB, valid MP4 signature, decodability and duration (1-3s nominal).
-    Returns duration in seconds.
+    Validates an MP4 or WebM clip.
+    Enforces <= 10 MB, a known container, decodability and a 0.5-5 s duration (1-3 s nominal).
+    Duration comes from decoded frame timestamps: browser WebM carries no usable header duration.
+    Returns the duration in seconds.
     """
     if len(content) > settings.max_video_size_bytes:
         raise AiApiException(
@@ -96,68 +102,46 @@ def validate_video_clip(content: bytes, filename: str = "clip.mp4") -> float:
         raise AiApiException(
             status_code=422,
             code="VIDEO_INVALID",
-            message="Video clip is empty or too short to be a valid MP4 container",
+            message="Video clip is empty or too short to be a valid MP4 or WebM container",
         )
 
-    # Basic MP4 signature check: box type at bytes 4..8 is 'ftyp'
-    if content[4:8] != b"ftyp":
+    container = detect_container(content)
+    if container is None:
         raise AiApiException(
             status_code=422,
             code="VIDEO_INVALID",
-            message="Invalid video container. File does not have MP4 ftyp header.",
+            message="Invalid video container. Only MP4 and WebM clips are accepted.",
         )
 
-    # Validate decodability using cv2 if available
     try:
         import cv2
-
-        with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
-
-        try:
-            cap = cv2.VideoCapture(tmp_path)
-            if not cap.isOpened():
-                if os.getenv("AI_MOCK_MODE", "false").lower() in ("true", "1", "yes"):
-                    return 2.0
-                raise AiApiException(
-                    status_code=422,
-                    code="VIDEO_INVALID",
-                    message="Video clip could not be opened by media decoder",
-                )
-
-            fps = cap.get(cv2.CAP_PROP_FPS)
-            frame_count = cap.get(cv2.CAP_PROP_FRAME_COUNT)
-
-            ret, frame = cap.read()
-            if not ret or frame is None:
-                if os.getenv("AI_MOCK_MODE", "false").lower() in ("true", "1", "yes"):
-                    return 2.0
-                raise AiApiException(
-                    status_code=422,
-                    code="VIDEO_INVALID",
-                    message="Video clip contains no decodable video frames",
-                )
-
-            duration = (frame_count / fps) if fps and fps > 0 else 2.0
-            cap.release()
-
-            # Enforce 1-3 seconds (with minor tolerance 0.5s - 5.0s)
-            if duration < 0.5 or duration > 5.0:
-                raise AiApiException(
-                    status_code=422,
-                    code="VIDEO_INVALID",
-                    message=f"Video clip duration ({duration:.1f}s) must be between 1 and 3 seconds",
-                )
-            return duration
-
-        finally:
-            if os.path.exists(tmp_path):
-                os.remove(tmp_path)
-
     except ImportError:
-        # If cv2 is not installed in the testing environment, basic ftyp check passed
+        # Without a decoder (a minimal test environment) the container check is all we can do.
         return 2.0
+
+    mock = os.getenv("AI_MOCK_MODE", "false").lower() in ("true", "1", "yes")
+    try:
+        with temp_clip(content, container) as path:
+            cap = cv2.VideoCapture(path)
+            try:
+                if not cap.isOpened():
+                    if mock:
+                        return 2.0
+                    raise AiApiException(
+                        status_code=422,
+                        code="VIDEO_INVALID",
+                        message="Video clip could not be opened by media decoder",
+                    )
+
+                reported_fps = cap.get(cv2.CAP_PROP_FPS)
+                timestamps: list = []
+                while len(timestamps) < _MAX_PROBE_FRAMES:
+                    ok, frame = cap.read()
+                    if not ok or frame is None:
+                        break
+                    timestamps.append(float(cap.get(cv2.CAP_PROP_POS_MSEC) or 0.0))
+            finally:
+                cap.release()
     except AiApiException:
         raise
     except Exception as e:
@@ -166,3 +150,21 @@ def validate_video_clip(content: bytes, filename: str = "clip.mp4") -> float:
             code="VIDEO_INVALID",
             message=f"Undecodable video clip: {str(e)}",
         )
+
+    if not timestamps:
+        if mock:
+            return 2.0
+        raise AiApiException(
+            status_code=422,
+            code="VIDEO_INVALID",
+            message="Video clip contains no decodable video frames",
+        )
+
+    duration = clip_duration_seconds(timestamps, len(timestamps), reported_fps)
+    if duration < MIN_CLIP_SECONDS or duration > MAX_CLIP_SECONDS:
+        raise AiApiException(
+            status_code=422,
+            code="VIDEO_INVALID",
+            message=f"Video clip duration ({duration:.1f}s) must be between 1 and 3 seconds",
+        )
+    return duration

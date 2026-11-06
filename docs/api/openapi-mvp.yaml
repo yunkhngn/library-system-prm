@@ -882,6 +882,7 @@ components:
             type: string
             enum:
             - video/mp4
+            - video/webm
         maxClipBytes:
           type: integer
           format: int64
@@ -6230,7 +6231,7 @@ paths:
       tags:
       - Access
       summary: recordFaceAccess
-      description: 'MP4 clip: 1–3 seconds, ≤10MiB, ≤1280x720 and 30fps; no audio. Backend validates the challenge
+      description: 'MP4 (mobile) or WebM (browser) clip, detected from the file bytes: 1–3 seconds, ≤10MiB, ≤1280x720 and 30fps; no audio. Backend validates the challenge
         and sends its stored DB instructions to AI. Only matched+livenessPassed+real+correct modelVersion reaches
         AccessService. Consume the challenge only for a determined attempt outcome; AI timeout records no session,
         returns 503, and requires QR/a new challenge. Do not accept studentId for client-selected identity.'
@@ -6330,7 +6331,7 @@ paths:
               $ref: '#/components/schemas/FaceAccessUpload'
             encoding:
               clip:
-                contentType: video/mp4
+                contentType: video/mp4, video/webm
   /actuator/health:
     get:
       operationId: backendHealth

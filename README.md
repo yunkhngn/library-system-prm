@@ -224,6 +224,8 @@ ArcFace R100, and match 1:N by cosine distance against the enrolled students.
 - **Thresholds** (`faceMaxCosineDistance`, `faceMinDistanceGap`, `livenessMinScore`) come from the admin
   recognition settings; defaults are 0.50 / 0.15 / 0.90. They were chosen from a handful of measured pairs
   (same person 0.27-0.53, different people 0.89-1.12), so **calibrate on your own students and kiosk camera**.
+- Clips may be **MP4** (mobile kiosk) or **WebM** (kiosk running in a browser); the container is detected from the
+  bytes and timing is taken from frame timestamps, since browser WebM has no reliable duration/fps header.
 - Use `python scripts/inspect_clip.py clip.mp4` to see the signals the service extracts from a recorded
   kiosk clip and whether it would pass.
 - **Re-enroll after switching from mock.** Embeddings stored while `AI_MOCK_MODE=true` are tagged
