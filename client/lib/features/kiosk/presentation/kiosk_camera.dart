@@ -125,9 +125,9 @@ class _KioskCameraState extends State<KioskCamera> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) => ClipRRect(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         child: ColoredBox(
-          color: const Color(0xFF202D39),
+          color: const Color(0xFF1B2733),
           child: Stack(fit: StackFit.expand, children: [
             if (_camera?.value.isInitialized == true)
               Center(
@@ -182,7 +182,9 @@ class _FaceFrame extends CustomPainter {
       Offset(size.width, size.height)
     ]) {
       final dx = point.dx == 0 ? 28.0 : -28.0;
+      final dy = point.dy == 0 ? 28.0 : -28.0;
       canvas.drawLine(point, point.translate(dx, 0), paint);
+      canvas.drawLine(point, point.translate(0, dy), paint);
     }
   }
 

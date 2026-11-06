@@ -248,7 +248,7 @@ class QrIT {
         long version = credNode.get("kiosk").get("version").asLong();
 
         // Kiosk login with invalid credential -> 401 INVALID_CREDENTIALS
-        KioskLoginRequest wrongLogin = new KioskLoginRequest(kioskId, "wrong-credential-secret-at-least-32-chars-long");
+        KioskLoginRequest wrongLogin = new KioskLoginRequest(kioskId, null, "wrong-credential-secret-at-least-32-chars-long");
         mockMvc.perform(post("/api/v1/kiosks/token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(wrongLogin)))
@@ -256,7 +256,15 @@ class QrIT {
                 .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"));
 
         // Kiosk login with valid credential -> 200 KioskToken
-        KioskLoginRequest validLogin = new KioskLoginRequest(kioskId, initialSecret);
+        // Kiosk code works in place of the id, case-insensitively
+        KioskLoginRequest codeLogin = new KioskLoginRequest(null, " k-exit-01 ", initialSecret);
+        mockMvc.perform(post("/api/v1/kiosks/token")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(codeLogin)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.kiosk.id").value(kioskId.toString()));
+
+        KioskLoginRequest validLogin = new KioskLoginRequest(kioskId, null, initialSecret);
         MvcResult tokenRes = mockMvc.perform(post("/api/v1/kiosks/token")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(validLogin)))

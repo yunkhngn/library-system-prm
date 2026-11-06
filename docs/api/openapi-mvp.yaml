@@ -1173,11 +1173,17 @@ components:
     KioskLoginRequest:
       type: object
       additionalProperties: false
+      description: Identify the kiosk with kioskId or kioskCode (one is required).
       properties:
         kioskId:
           type: string
           format: uuid
           example: 14867700-9090-4000-8000-000000000001
+        kioskCode:
+          type: string
+          maxLength: 64
+          description: Case-insensitive kiosk code shown in admin.
+          example: KIOSK-01
         credential:
           type: string
           minLength: 32
@@ -3723,7 +3729,7 @@ paths:
             schema:
               $ref: '#/components/schemas/KioskLoginRequest'
             example:
-              kioskId: 14867700-9090-4000-8000-000000000001
+              kioskCode: KIOSK-01
               credential: example-device-secret-not-a-real-credential
   /api/v1/kiosks/heartbeat:
     post:

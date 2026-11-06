@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -156,7 +157,10 @@ public class KioskService {
 
     @Transactional
     public KioskToken loginKiosk(KioskLoginRequest req) {
-        Kiosk kiosk = kioskRepository.findById(req.kioskId())
+        Optional<Kiosk> found = req.kioskId() != null
+                ? kioskRepository.findById(req.kioskId())
+                : kioskRepository.findByCode(req.kioskCode().trim().toUpperCase());
+        Kiosk kiosk = found
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "INVALID_CREDENTIALS", "Invalid kiosk credentials"));
 
         if (!passwordEncoder.matches(req.credential(), kiosk.getCredentialHash())) {

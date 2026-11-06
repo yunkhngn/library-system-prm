@@ -58,7 +58,8 @@ class KioskChallenge {
 }
 
 abstract interface class KioskRepository {
-  Future<KioskSession> connect(String id, String credential);
+  /// [code] is the kiosk code shown in admin (e.g. KIOSK-01).
+  Future<KioskSession> connect(String code, String credential);
   Future<void> heartbeat(String cameraStatus);
   Future<KioskChallenge> challenge();
   Future<AccessResult> face(
@@ -78,11 +79,11 @@ class KioskApi implements KioskRepository {
       });
 
   @override
-  Future<KioskSession> connect(String id, String credential) async {
+  Future<KioskSession> connect(String code, String credential) async {
     _token = null;
     final login = await apiCall(
         () => dio.post<Map<String, dynamic>>('/api/v1/kiosks/token',
-            data: {'kioskId': id, 'credential': credential}),
+            data: {'kioskCode': code, 'credential': credential}),
         (json) => json);
     _token = login['accessToken'] as String;
     try {

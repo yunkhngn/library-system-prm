@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:client/features/kiosk/data/kiosk_credential_store.dart';
 import 'package:client/features/kiosk/data/kiosk_repository.dart';
 import 'package:client/features/access/data/models/access_result.dart';
 import 'package:client/features/access/data/models/subject.dart';
@@ -17,20 +18,29 @@ final kioskResult = AccessResult(
 );
 
 class FakeKioskRepository implements KioskRepository {
-  int qrCalls = 0, faceCalls = 0;
-  Object? failure;
-  String? usedKey;
+  int qrCalls = 0, faceCalls = 0, connectCalls = 0;
+  Object? failure, connectFailure, heartbeatFailure;
+  String? usedKey, lastCode;
   AccessRequestStatus recovery = AccessRequestStatus(
       status: AccessRequestState.completed,
       httpStatus: 200,
       result: kioskResult,
       errorCode: null);
   @override
-  Future<KioskSession> connect(String id, String credential) async =>
-      const KioskSession(
-          name: 'Cổng chính · Lối vào', mode: 'ENTRY', faceEnabled: true);
+  Future<KioskSession> connect(String code, String credential) async {
+    connectCalls++;
+    lastCode = code;
+    if (connectFailure != null) throw connectFailure!;
+    return const KioskSession(
+        name: 'Cổng chính · Lối vào', mode: 'ENTRY', faceEnabled: true);
+  }
+
   @override
-  Future<void> heartbeat(String status) async {}
+  Future<void> heartbeat(String status) async {
+    final failure = heartbeatFailure;
+    heartbeatFailure = null;
+    if (failure != null) throw failure;
+  }
   @override
   Future<KioskChallenge> challenge() async => KioskChallenge(
       id: 'challenge',
@@ -55,4 +65,14 @@ class FakeKioskRepository implements KioskRepository {
 
   @override
   Future<AccessRequestStatus> status(String key) async => recovery;
+}
+
+class MemoryKioskCredentialStore extends KioskCredentialStore {
+  KioskCredentials? value;
+  @override
+  Future<KioskCredentials?> read() async => value;
+  @override
+  Future<void> save(KioskCredentials credentials) async => value = credentials;
+  @override
+  Future<void> clear() async => value = null;
 }

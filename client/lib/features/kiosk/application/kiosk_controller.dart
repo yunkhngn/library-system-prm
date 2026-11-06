@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_error.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../access/data/models/access_result.dart';
+import '../data/kiosk_credential_store.dart';
 import '../data/kiosk_repository.dart';
 
 enum KioskPhase { ready, working, success, failure }
@@ -13,8 +14,11 @@ enum KioskPhase { ready, working, success, failure }
 typedef KioskCapture = Future<Uint8List> Function(KioskChallenge challenge);
 
 class KioskController extends ChangeNotifier {
-  KioskController(this.repository);
+  KioskController(this.repository, [this.store]);
   final KioskRepository repository;
+
+  /// Null in tests that do not exercise persistence.
+  final KioskCredentialStore? store;
   KioskSession? session;
   KioskPhase phase = KioskPhase.ready;
   AccessResult? result;
@@ -22,25 +26,68 @@ class KioskController extends ChangeNotifier {
   String? pendingKey;
   String cameraStatus = 'UNAVAILABLE';
   bool online = false, connecting = false, _disposed = false, _pinging = false;
+
+  /// True while the saved login is being restored on page load.
+  bool restoring = false;
+  KioskCredentials? _saved;
   Timer? _heartbeat, _returnTimer;
   bool get busy => connecting || phase == KioskPhase.working;
   bool get canScan => session != null && !busy && pendingKey == null;
+  bool get hasSavedLogin => _saved != null;
 
   void _emit() {
     if (!_disposed) notifyListeners();
   }
 
-  Future<void> connect(String id, String credential) async {
+  /// Reconnects with the login saved on this device, if any.
+  Future<void> restore() async {
+    if (store == null || session != null || busy) return;
+    restoring = true;
+    _emit();
+    _saved = await store!.read();
+    restoring = false;
+    if (_saved == null) {
+      _emit();
+      return;
+    }
+    await _login(_saved!);
+  }
+
+  Future<void> connect(String code, String credential) =>
+      _login((code: code.trim().toUpperCase(), credential: credential.trim()));
+
+  Future<void> retrySaved() async {
+    if (_saved != null) await _login(_saved!);
+  }
+
+  /// Forgets this device's login; staff must enter the code and key again.
+  Future<void> disconnect() async {
+    if (busy || pendingKey != null) return;
+    _heartbeat?.cancel();
+    _returnTimer?.cancel();
+    session = null;
+    online = false;
+    error = null;
+    result = null;
+    phase = KioskPhase.ready;
+    _saved = null;
+    await store?.clear();
+    _emit();
+  }
+
+  Future<void> _login(KioskCredentials login) async {
     if (busy || pendingKey != null) return;
     connecting = true;
     error = null;
     _emit();
     try {
-      final connected = await repository.connect(id.trim(), credential.trim());
+      final connected = await repository.connect(login.code, login.credential);
       if (_disposed) return;
       session = connected;
       online = true;
       phase = KioskPhase.ready;
+      _saved = login;
+      unawaited(store?.save(login));
       _heartbeat?.cancel();
       _heartbeat = Timer.periodic(const Duration(seconds: 20), (_) => ping());
       unawaited(ping());
@@ -48,9 +95,33 @@ class KioskController extends ChangeNotifier {
       session = null;
       online = false;
       error = _asError(e);
+      if (_rejected(error!)) {
+        _saved = null;
+        unawaited(store?.clear());
+      }
     } finally {
       connecting = false;
       _emit();
+    }
+  }
+
+  /// Kiosk tokens expire after an hour; sign in again with the saved key.
+  Future<bool> _relogin() async {
+    final saved = _saved;
+    if (saved == null || _disposed) return false;
+    try {
+      final connected = await repository.connect(saved.code, saved.credential);
+      if (_disposed) return false;
+      session = connected;
+      online = true;
+      return true;
+    } catch (e) {
+      final failure = _asError(e);
+      if (_rejected(failure)) {
+        _saved = null;
+        unawaited(store?.clear());
+      }
+      return false;
     }
   }
 
@@ -64,8 +135,12 @@ class KioskController extends ChangeNotifier {
       online = false;
       final failure = _asError(e);
       if (_authFailure(failure)) {
-        error = failure;
-        if (!busy && pendingKey == null) session = null;
+        if (await _relogin()) {
+          error = null;
+        } else {
+          error = failure;
+          if (!busy && pendingKey == null) session = null;
+        }
       }
     } finally {
       _pinging = false;
@@ -117,7 +192,9 @@ class KioskController extends ChangeNotifier {
           error!.code == 'REQUEST_IN_PROGRESS' ||
           (error!.statusCode ?? 0) >= 500;
       if (!uncertain) pendingKey = null;
-      if (_authFailure(error!) && pendingKey == null) session = null;
+      if (_authFailure(error!) && pendingKey == null && !await _relogin()) {
+        session = null;
+      }
       if (error!.isOutcomeUncertain) online = false;
       phase = KioskPhase.failure;
       _emit();
@@ -177,6 +254,10 @@ class KioskController extends ChangeNotifier {
   bool _authFailure(ApiException e) =>
       e.statusCode == 401 ||
       ['KIOSK_REVOKED', 'TOKEN_REVOKED'].contains(e.code);
+
+  /// The saved key itself is no longer valid (wrong, rotated or revoked).
+  bool _rejected(ApiException e) =>
+      ['INVALID_CREDENTIALS', 'KIOSK_REVOKED'].contains(e.code);
   ApiException _asError(Object e) =>
       e is ApiException ? e : const ApiException(code: 'UNKNOWN');
   @override
@@ -190,5 +271,6 @@ class KioskController extends ChangeNotifier {
 }
 
 final kioskControllerProvider =
-    ChangeNotifierProvider.autoDispose<KioskController>(
-        (ref) => KioskController(ref.watch(kioskRepositoryProvider)));
+    ChangeNotifierProvider.autoDispose<KioskController>((ref) =>
+        KioskController(ref.watch(kioskRepositoryProvider),
+            ref.watch(kioskCredentialStoreProvider)));
