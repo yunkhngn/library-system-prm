@@ -178,7 +178,8 @@ def test_face_enrollment_full_lifecycle(http_client: httpx.Client, seed_password
     enroll_data = res_enroll.json()
     assert enroll_data["isEnrolled"] is True
     assert enroll_data["imageCount"] == 3
-    assert enroll_data["modelId"] == "arcface-512-r100"
+    # The test stack runs the AI service with AI_MOCK_MODE=true; synthetic results are tagged.
+    assert enroll_data["modelId"] == "arcface-512-mock"
     assert enroll_data["modelVersion"] == "arcface-512-v1"
     assert enroll_data["enrolledAt"] is not None
     assert enroll_data["version"] == current_version + 1

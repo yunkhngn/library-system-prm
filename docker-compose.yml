@@ -36,7 +36,8 @@ services:
     environment:
       - PORT=8001
       - HOST=0.0.0.0
-      - FACE_SIMILARITY_THRESHOLD=${FACE_SIMILARITY_THRESHOLD:-0.65}
+      - AI_MOCK_MODE=${AI_MOCK_MODE:-false}
+      - AI_DATABASE_URL=postgresql://ai_service_user:${AI_DB_PASSWORD:-ai_service_secure_password}@postgres:5432/${POSTGRES_DB:-library_db}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/api/v1/health')"]
       interval: 15s

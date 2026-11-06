@@ -1,10 +1,10 @@
 import json
-import os
 import uuid
-from typing import List
 from fastapi import APIRouter, Depends, File, Form, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from app.core.security import verify_service_key, AiApiException
-from app.core.settings import settings
+from app.core.model_registry import model_registry
+from app.core.settings import mock_mode as is_mock_mode, settings
 from app.models.schemas import ChallengeInstruction, InternalRecognitionResult
 from app.services.image_decoder import validate_video_clip
 
@@ -86,15 +86,15 @@ async def recognize_face(
     clip_bytes = await clip.read()
     validate_video_clip(clip_bytes, filename=clip.filename or "clip.mp4")
 
-    # 5. Check mock / real operational status
-    mock_mode = os.getenv("AI_MOCK_MODE", "true").lower() in ("true", "1", "yes")
-    models_ready = os.getenv("AI_MODELS_READY", "false").lower() in ("true", "1", "yes")
+    # 5. Operational status
+    mock_mode = is_mock_mode()
 
-    if not mock_mode and not models_ready:
+    if not model_registry.is_ready():
         raise AiApiException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="MODEL_NOT_READY",
             message="Recognition models are not ready for inference",
+            fallback_recommended=True,
         )
 
     if not mock_mode and modelVersion != settings.face_model_version:
@@ -104,70 +104,39 @@ async def recognize_face(
             message=f"Model version '{modelVersion}' does not match loaded model '{settings.face_model_version}'",
         )
 
-    # 6. Evaluate anti-spoofing and liveness
-    from app.services.liveness_service import evaluate_liveness, extract_frames_from_clip
-    from app.services.matching_service import match_face_embedding
-    from app.services.embedding_service import compute_deterministic_vector
     from app.repositories.candidates import load_active_candidates
 
-    liveness_res = evaluate_liveness(
-        clip_bytes,
-        parsed_instructions,
-        min_score=livenessMinScore,
-        mock_mode=mock_mode,
-    )
+    # 6. Real inference (CPU heavy: keep it off the event loop)
+    if not mock_mode:
+        from app.services.recognition_service import recognize_clip
 
-    if not liveness_res.passed:
-        return match_face_embedding(
-            probe_embedding=[],
-            candidates=[],
+        candidates = await run_in_threadpool(load_active_candidates)
+        return await run_in_threadpool(
+            recognize_clip,
+            clip_bytes,
+            parsed_instructions,
+            candidates,
             max_cosine_distance=maxCosineDistance,
             min_distance_gap=minDistanceGap,
-            liveness_passed=False,
-            liveness_score=liveness_res.score,
+            liveness_min_score=livenessMinScore,
             model_version=modelVersion,
-            simulated=mock_mode,
         )
 
-    # 7. Load enrolled student candidates from DB view
+    # 7. Mock path (AI_MOCK_MODE=true): synthetic and always flagged `simulated`.
+    from app.services.embedding_service import compute_deterministic_vector
+    from app.services.liveness_service import evaluate_liveness
+    from app.services.matching_service import match_face_embedding
+
+    liveness_res = evaluate_liveness(clip_bytes, parsed_instructions, min_score=livenessMinScore, mock_mode=True)
     candidates = load_active_candidates()
-    if not candidates:
-        return match_face_embedding(
-            probe_embedding=[],
-            candidates=[],
-            max_cosine_distance=maxCosineDistance,
-            min_distance_gap=minDistanceGap,
-            liveness_passed=True,
-            liveness_score=liveness_res.score,
-            model_version=modelVersion,
-            simulated=mock_mode,
-        )
-
-    # 8. Extract face embedding from video probe
-    frames = extract_frames_from_clip(clip_bytes)
-    probe_img_bytes = None
-    if frames:
-        mid_idx = len(frames) // 2
-        try:
-            import cv2
-            success, enc = cv2.imencode(".jpg", frames[mid_idx])
-            if success:
-                probe_img_bytes = enc.tobytes()
-        except Exception:
-            pass
-
-    if probe_img_bytes is None:
-        probe_img_bytes = clip_bytes[:16384]
-
-    probe_vector = compute_deterministic_vector(probe_img_bytes).tolist()
-
+    probe = compute_deterministic_vector(clip_bytes[:16384]).tolist() if candidates else []
     return match_face_embedding(
-        probe_embedding=probe_vector,
+        probe_embedding=probe,
         candidates=candidates,
         max_cosine_distance=maxCosineDistance,
         min_distance_gap=minDistanceGap,
-        liveness_passed=True,
+        liveness_passed=liveness_res.passed,
         liveness_score=liveness_res.score,
         model_version=modelVersion,
-        simulated=mock_mode,
+        simulated=True,
     )

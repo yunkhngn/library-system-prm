@@ -1,9 +1,9 @@
-import os
 from typing import List
-import numpy as np
 from fastapi import APIRouter, Depends, File, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from app.core.security import verify_service_key, AiApiException
-from app.core.settings import settings
+from app.core.model_registry import model_registry
+from app.core.settings import mock_mode as is_mock_mode, settings
 from app.models.schemas import InternalEmbeddingResult
 from app.services.image_decoder import validate_and_decode_image
 
@@ -26,14 +26,14 @@ async def extract_embeddings(
             message=f"Enrollment requires between {settings.min_images_count} and {settings.max_images_count} images (received {len(images) if images else 0})",
         )
 
-    mock_mode = os.getenv("AI_MOCK_MODE", "true").lower() in ("true", "1", "yes")
-    models_ready = os.getenv("AI_MODELS_READY", "false").lower() in ("true", "1", "yes")
+    mock_mode = is_mock_mode()
 
-    if not mock_mode and not models_ready:
+    if not model_registry.is_ready():
         raise AiApiException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="MODEL_NOT_READY",
             message="Face embedding models are not ready for inference",
+            fallback_recommended=True,
         )
 
     total_bytes = 0
@@ -52,12 +52,12 @@ async def extract_embeddings(
         decoded_images.append(content)
 
     from app.services.embedding_service import extract_face_embeddings
-    embeddings = extract_face_embeddings(decoded_images, simulated=mock_mode)
+    embeddings = await run_in_threadpool(extract_face_embeddings, decoded_images, mock_mode)
 
     return InternalEmbeddingResult(
         embeddings=embeddings,
         dimension=512,
-        modelId=settings.face_model_id,
+        modelId=model_registry.reported_model_id,
         modelVersion=settings.face_model_version,
         simulated=mock_mode,
     )

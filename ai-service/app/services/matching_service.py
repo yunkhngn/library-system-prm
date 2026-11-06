@@ -19,9 +19,9 @@ def match_face_embedding(
     Exact cosine distance grouped by distinct student person, rejecting ties.
     Returns InternalRecognitionResult.
     """
-    m_id = model_registry.model_id
+    m_id = model_registry.reported_model_id
     m_ver = model_version or model_registry.model_version
-    liv_ver = "anti-spoof-v1"
+    liv_ver = model_registry.liveness_model_version
 
     if not liveness_passed:
         return InternalRecognitionResult(

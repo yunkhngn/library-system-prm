@@ -71,7 +71,9 @@ The project is organized as a modular monorepo composed of three core services a
 | Framework | FastAPI + Uvicorn |
 | Validation | Pydantic v2 |
 | Computer Vision | OpenCV (Headless), NumPy, Pillow |
-| AI Inference | InsightFace / ONNX Runtime / FaceNet |
+| Face detection / landmarks | MediaPipe Face Landmarker (Apache-2.0) |
+| Face embedding | ArcFace ResNet100, 512-d, via ONNX Runtime (ONNX Model Zoo, Apache-2.0) |
+| Liveness | Challenge-response: blink, then turn left/right (landmark based) |
 
 ---
 
@@ -181,8 +183,11 @@ cd ai-service
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export AI_MOCK_MODE=true
+python scripts/fetch_models.py        # downloads + verifies the ArcFace and landmarker models (~265 MB)
+export AI_DATABASE_URL=postgresql://ai_service_user:ai_service_secure_password@localhost:5432/library_db
 uvicorn app.main:app --port 8001 --reload
+# No model files / just exploring the API? `export AI_MOCK_MODE=true` returns synthetic results that
+# the backend refuses to use for entry/exit (SIMULATED_RESULT_REJECTED).
 ```
 
 #### 3. Start Backend (Spring Boot)
@@ -203,6 +208,29 @@ flutter run -d <device_id>   # Mobile / Desktop
 > - **Android Emulator:** Set `API_BASE_URL=http://10.0.2.2:8080` (maps to host `localhost:8080`).
 > - **iOS Simulator:** Set `API_BASE_URL=http://localhost:8080`.
 > - **Physical Device (LAN):** Set `API_BASE_URL=http://<YOUR_LAN_IP>:8080`.
+
+---
+
+## Face recognition and liveness
+
+`ai-service` runs the real pipeline: detect one face, align it to the ArcFace template, embed with
+ArcFace R100, and match 1:N by cosine distance against the enrolled students.
+
+- **Readiness is real.** `/api/v1/ready` is `READY` only once both models are loaded and their SHA-256
+  matches `app/models/manifest.json`. There is no "ready" flag to flip.
+- **Liveness is a random challenge** (blink, then turn left or right). The clip must show a single face
+  blinking (eyes open, closed, open) and then turning at least ~17 degrees in the requested direction.
+  The face at the start and end of the clip must be the same person.
+- **Thresholds** (`faceMaxCosineDistance`, `faceMinDistanceGap`, `livenessMinScore`) come from the admin
+  recognition settings; defaults are 0.50 / 0.15 / 0.90. They were chosen from a handful of measured pairs
+  (same person 0.27-0.53, different people 0.89-1.12), so **calibrate on your own students and kiosk camera**.
+- Use `python scripts/inspect_clip.py clip.mp4` to see the signals the service extracts from a recorded
+  kiosk clip and whether it would pass.
+- **Re-enroll after switching from mock.** Embeddings stored while `AI_MOCK_MODE=true` are tagged
+  `arcface-512-mock` and are ignored by the real matcher; students must enroll again.
+
+Known limit: liveness is not a passive anti-spoofing model. A real-time replay or deepfake that performs
+the requested actions in order is not detected.
 
 ---
 
@@ -233,9 +261,10 @@ When started with `SPRING_PROFILES_ACTIVE=dev`, the backend automatically seeds 
 | `DEV_SEED_PASSWORD` | `dev_secret_password_123` | Default password for seeded accounts |
 | `AI_SERVICE_URL` | `http://ai-service:8001` | Backend connection to AI service |
 | `AI_SERVICE_KEY` | *(Secret key)* | Pre-shared key for AI internal API security |
-| `AI_MOCK_MODE` | `true` | `true` for synthetic embeddings/liveness; `false` for real InsightFace inference |
-| `AI_MODELS_READY` | `false` | Readiness indicator for loaded ML weights |
-| `FACE_SIMILARITY_THRESHOLD` | `0.65` | Distance threshold for face matching |
+| `AI_MOCK_MODE` | `false` | `false`: real ArcFace + liveness. `true`: synthetic results, never accepted for access |
+| `AI_DATABASE_URL` | *(compose sets it)* | Read-only DB role (`ai_service_user`) the AI service uses to read enrolled faces |
+| `AI_DB_PASSWORD` | `ai_service_secure_password` | Password of that role (see `scripts/db-bootstrap.sql`) |
+| `AI_LIVENESS_MIRRORED_INPUT` | `false` | Set `true` if the kiosk records a mirrored video (TURN_LEFT/RIGHT are the user's left/right) |
 | `AI_FACE_MODEL_VERSION` | `arcface-512-v1` | Face embedding model version string |
 | `CLIENT_PORT` | `3000` | Flutter Web container port |
 | `API_BASE_URL` | `http://localhost:8080` | Client target API endpoint |

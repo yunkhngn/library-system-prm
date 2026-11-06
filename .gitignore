@@ -78,3 +78,8 @@ client/ios/Flutter/Flutter.framework
 client/ios/Flutter/Flutter.podspec
 client/android/.gradle/
 client/android/local.properties
+
+# AI model binaries (downloaded by ai-service/scripts/fetch_models.py)
+ai-service/app/models/*.onnx
+ai-service/app/models/*.task
+ai-service/app/models/*.part
