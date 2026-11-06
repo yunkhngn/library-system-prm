@@ -117,8 +117,8 @@ public class FaceAccessService {
             throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VIDEO_INVALID", "Failed reading clip bytes", true);
         }
 
-        if (!isValidMp4Container(clipBytes)) {
-            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VIDEO_INVALID", "Clip must be a valid MP4 container", true);
+        if (VideoContainer.detect(clipBytes).isEmpty()) {
+            throw new ApiException(HttpStatus.UNPROCESSABLE_ENTITY, "VIDEO_INVALID", "Clip must be a valid MP4 or WebM container", true);
         }
 
         // 2. Validate face challenge
@@ -247,13 +247,5 @@ public class FaceAccessService {
         } catch (Exception e) {
             log.error("Failed recording recognition attempt: {}", e.getMessage(), e);
         }
-    }
-
-    private boolean isValidMp4Container(byte[] bytes) {
-        if (bytes == null || bytes.length < 8) {
-            return false;
-        }
-        // Check for ftyp at offset 4
-        return bytes[4] == 'f' && bytes[5] == 't' && bytes[6] == 'y' && bytes[7] == 'p';
     }
 }

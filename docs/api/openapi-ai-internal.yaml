@@ -645,6 +645,6 @@ paths:
               $ref: '#/components/schemas/InternalRecognitionUpload'
             encoding:
               clip:
-                contentType: video/mp4
+                contentType: video/mp4, video/webm
               challengeInstructions:
                 contentType: application/json

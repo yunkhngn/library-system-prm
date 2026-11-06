@@ -7,6 +7,7 @@ import '../../../core/network/api_error.dart';
 import '../../../core/utils/idempotency.dart';
 import '../../access/data/models/access_result.dart';
 import '../data/kiosk_credential_store.dart';
+import '../data/clip_format.dart';
 import '../data/kiosk_repository.dart';
 
 enum KioskPhase { ready, working, success, failure }
@@ -159,10 +160,10 @@ class KioskController extends ChangeNotifier {
           if (bytes.length > challenge.maxBytes) {
             throw const ApiException(code: 'PAYLOAD_TOO_LARGE');
           }
-          // The server accepts MP4. Do not relabel a WebM recording as MP4.
-          if (bytes.length < 12 ||
-              String.fromCharCodes(bytes.sublist(4, 8)) != 'ftyp') {
-            throw const ApiException(code: 'MP4_UNSUPPORTED');
+          // The server accepts MP4 (mobile) and WebM (browser). Anything else
+          // is refused here rather than relabelled.
+          if (sniffClipFormat(bytes) == null) {
+            throw const ApiException(code: 'VIDEO_FORMAT_UNSUPPORTED');
           }
           pendingKey = key;
           return await repository.face(challenge, bytes, key);

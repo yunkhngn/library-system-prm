@@ -27,6 +27,7 @@ from app.core.settings import settings
 from app.models.schemas import ChallengeInstruction
 from app.services.face_analysis import FaceAnalyzer, FaceObservation
 from app.services.embedding_service import align_face, resize_rgb
+from app.services.video_io import effective_fps, sane_fps, temp_clip
 
 MIN_FPS, MAX_FPS, DEFAULT_FPS = 5.0, 60.0, 30.0
 _MAX_FACELESS_RATIO = 0.70          # more than this without any face -> FACE_NOT_FOUND
@@ -213,42 +214,41 @@ class ClipAnalysis:
 
 
 def analyze_clip(clip_bytes: bytes, analyzer: FaceAnalyzer) -> ClipAnalysis:
-    """Decode an MP4 and analyse up to `liveness_max_frames` evenly strided frames, one at a time."""
-    import os
-    import tempfile
+    """
+    Decode an MP4 or WebM and analyse up to `liveness_max_frames` evenly strided frames, one at a time.
 
-    with tempfile.NamedTemporaryFile(suffix=".mp4", delete=False) as tmp:
-        tmp.write(clip_bytes)
-        path = tmp.name
-    capture = None
-    try:
+    The frame rate is derived from the decoded timestamps, because browser WebM reports none that
+    can be trusted; the blink/turn timing rules depend on it.
+    """
+    with temp_clip(clip_bytes) as path:
         capture = cv2.VideoCapture(path)
-        if not capture.isOpened():
-            return ClipAnalysis([], [], DEFAULT_FPS)
-        source_fps = capture.get(cv2.CAP_PROP_FPS)
-        source_fps = source_fps if source_fps and source_fps > 0 else DEFAULT_FPS
-        frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
-        stride = max(1, math.ceil(frame_count / settings.liveness_max_frames)) if frame_count > 0 else 1
+        try:
+            if not capture.isOpened():
+                return ClipAnalysis([], [], DEFAULT_FPS)
+            reported_fps = capture.get(cv2.CAP_PROP_FPS)
+            frame_count = int(capture.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+            stride = max(1, math.ceil(frame_count / settings.liveness_max_frames)) if frame_count > 0 else 1
 
-        observations: List[FaceObservation] = []
-        aligned: List[Optional[np.ndarray]] = []
-        index = 0
-        while len(observations) < settings.liveness_max_frames * 2:
-            ok, frame = capture.read()
-            if not ok:
-                break
-            if index % stride == 0:
-                rgb = resize_rgb(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), settings.analysis_max_side_px)
-                observation = analyzer.analyze(rgb)
-                observations.append(observation)
-                aligned.append(align_face(rgb, observation.points5) if observation.single else None)
-            index += 1
-        return ClipAnalysis(observations, aligned, source_fps / stride)
-    finally:
-        if capture is not None:
+            observations: List[FaceObservation] = []
+            aligned: List[Optional[np.ndarray]] = []
+            timestamps: List[float] = []
+            index = 0
+            while len(observations) < settings.liveness_max_frames * 2:
+                ok, frame = capture.read()
+                if not ok:
+                    break
+                if index % stride == 0:
+                    rgb = resize_rgb(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), settings.analysis_max_side_px)
+                    observation = analyzer.analyze(rgb)
+                    observations.append(observation)
+                    aligned.append(align_face(rgb, observation.points5) if observation.single else None)
+                    timestamps.append(float(capture.get(cv2.CAP_PROP_POS_MSEC) or 0.0))
+                index += 1
+        finally:
             capture.release()
-        if os.path.exists(path):
-            os.remove(path)
+
+    fallback = sane_fps(reported_fps) / stride
+    return ClipAnalysis(observations, aligned, effective_fps(timestamps, fallback))
 
 
 def evaluate_liveness(

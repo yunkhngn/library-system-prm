@@ -63,15 +63,42 @@ void main() {
     expect(controller.pendingKey, isNull);
   });
 
-  test('capture rejects WebM and erases transient video bytes', () async {
+  test('capture rejects an unknown container and erases transient video bytes',
+      () async {
     final repo = FakeKioskRepository();
     final controller = KioskController(repo);
     addTearDown(controller.dispose);
     await controller.connect('id', 'credential');
     final bytes = Uint8List.fromList(List.filled(12, 5));
     await controller.recognize((_) async => bytes);
-    expect(controller.error?.code, 'MP4_UNSUPPORTED');
+    expect(controller.error?.code, 'VIDEO_FORMAT_UNSUPPORTED');
     expect(repo.faceCalls, 0);
     expect(bytes, everyElement(0));
+  });
+
+  test('capture accepts a WebM recording (browser kiosk)', () async {
+    final repo = FakeKioskRepository();
+    final controller = KioskController(repo);
+    addTearDown(controller.dispose);
+    await controller.connect('id', 'credential');
+    final bytes = Uint8List.fromList(
+        [0x1A, 0x45, 0xDF, 0xA3, ...List.filled(40, 1)]);
+    await controller.recognize((_) async => bytes);
+    expect(controller.error, isNull);
+    expect(repo.faceCalls, 1);
+    expect(controller.result, kioskResult);
+    expect(bytes, everyElement(0), reason: 'transient video bytes are erased');
+  });
+
+  test('capture accepts an MP4 recording (mobile kiosk)', () async {
+    final repo = FakeKioskRepository();
+    final controller = KioskController(repo);
+    addTearDown(controller.dispose);
+    await controller.connect('id', 'credential');
+    final bytes = Uint8List.fromList(
+        [0, 0, 0, 0x20, 0x66, 0x74, 0x79, 0x70, ...List.filled(40, 1)]);
+    await controller.recognize((_) async => bytes);
+    expect(controller.error, isNull);
+    expect(repo.faceCalls, 1);
   });
 }

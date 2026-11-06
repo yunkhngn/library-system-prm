@@ -25,7 +25,7 @@ public record FaceCaptureRules(
                 5242880L,
                 26214400L,
                 16000000L,
-                List.of("video/mp4"),
+                List.of("video/mp4", "video/webm"),
                 10485760L,
                 1.0,
                 3.0,

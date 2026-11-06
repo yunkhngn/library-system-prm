@@ -122,10 +122,12 @@ public class AiClient {
         headers.set("X-Service-Key", serviceKey);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+        // Name the part after what the bytes really are so the AI service picks the right decoder.
+        String clipFilename = VideoContainer.detect(clipBytes).orElse(VideoContainer.MP4).filename();
         ByteArrayResource clipResource = new ByteArrayResource(clipBytes) {
             @Override
             public String getFilename() {
-                return "clip.mp4";
+                return clipFilename;
             }
         };
         body.add("clip", clipResource);

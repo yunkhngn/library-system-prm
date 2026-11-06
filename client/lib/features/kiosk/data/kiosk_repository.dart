@@ -7,6 +7,7 @@ import '../../../core/config/env.dart';
 import '../../../core/network/api_call.dart';
 import '../../../core/network/api_error.dart';
 import '../../access/data/models/access_result.dart';
+import 'clip_format.dart';
 
 class KioskSession {
   const KioskSession(
@@ -127,18 +128,21 @@ class KioskApi implements KioskRepository {
 
   @override
   Future<AccessResult> face(
-          KioskChallenge challenge, Uint8List clip, String key) =>
-      apiCall(
-        () => dio.post<Map<String, dynamic>>('/api/v1/access/face',
-            options: _options(key),
-            data: FormData.fromMap({
-              'challengeId': challenge.id,
-              'clip': MultipartFile.fromBytes(clip,
-                  filename: 'capture.mp4',
-                  contentType: DioMediaType('video', 'mp4')),
-            })),
-        _result,
-      );
+      KioskChallenge challenge, Uint8List clip, String key) {
+    // Label the upload with its real container (MP4 on mobile, WebM on web).
+    final format = sniffClipFormat(clip) ?? ClipFormat.mp4;
+    return apiCall(
+      () => dio.post<Map<String, dynamic>>('/api/v1/access/face',
+          options: _options(key),
+          data: FormData.fromMap({
+            'challengeId': challenge.id,
+            'clip': MultipartFile.fromBytes(clip,
+                filename: format.filename,
+                contentType: DioMediaType('video', format.mimeSubtype)),
+          })),
+      _result,
+    );
+  }
 
   @override
   Future<AccessResult> qr(String token, String key) => apiCall(
