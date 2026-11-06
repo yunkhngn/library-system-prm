@@ -21,6 +21,12 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
+# Download the face models (SHA-256 verified against the manifest). This layer only depends on the
+# manifest and the fetch script, so it is cached across ordinary code changes.
+COPY scripts/fetch_models.py ./scripts/fetch_models.py
+COPY app/models/manifest.json ./app/models/manifest.json
+RUN python scripts/fetch_models.py
+
 # Create non-root system user for security
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser

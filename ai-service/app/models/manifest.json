@@ -7,11 +7,25 @@
   "similarityThreshold": 0.65,
   "minDistanceGap": 0.15,
   "livenessMinScore": 0.90,
-  "license": "Apache-2.0 / MIT compatible",
-  "checksum": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "livenessModelVersion": "challenge-landmark-v1",
   "preprocessing": {
     "targetSize": [112, 112],
-    "normalize": "mean_std",
-    "colorFormat": "RGB"
+    "normalize": "none (0-255 RGB; the ONNX graph normalises internally)",
+    "colorFormat": "RGB",
+    "alignment": "5-point similarity transform to the ArcFace template"
+  },
+  "files": {
+    "embedding": {
+      "name": "arcfaceresnet100-8.onnx",
+      "url": "https://huggingface.co/onnxmodelzoo/arcfaceresnet100-8/resolve/main/arcfaceresnet100-8.onnx",
+      "sha256": "f3a6bc281e72f88862f5748b53be3d76b3b48f8f1ab1f4a537941bdc4e1b01da",
+      "license": "Apache-2.0 (ONNX Model Zoo, ArcFace ResNet100)"
+    },
+    "landmarker": {
+      "name": "face_landmarker.task",
+      "url": "https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task",
+      "sha256": "64184e229b263107bc2b804c6625db1341ff2bb731874b0bcc2fe6544e0bc9ff",
+      "license": "Apache-2.0 (MediaPipe Face Landmarker)"
+    }
   }
 }

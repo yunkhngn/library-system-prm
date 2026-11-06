@@ -11,6 +11,14 @@ VALID_KEY = settings.service_api_key
 HEADERS = {"X-Service-Key": VALID_KEY}
 
 
+@pytest.fixture(autouse=True)
+def _mock_mode_by_default(monkeypatch):
+    """These tests exercise upload validation, which is independent of the models.
+
+    Mock mode keeps them runnable without model files; tests that need real mode switch it off."""
+    monkeypatch.setenv("AI_MOCK_MODE", "true")
+
+
 def create_image_bytes(width: int = 100, height: int = 100, fmt: str = "JPEG") -> bytes:
     buf = io.BytesIO()
     img = Image.new("RGB", (width, height), color="blue")

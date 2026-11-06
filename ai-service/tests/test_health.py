@@ -3,6 +3,7 @@ import pytest
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.core.settings import settings
+from support import FakeAnalyzer, FakeSession, unit
 
 VALID_KEY = settings.service_api_key
 
@@ -65,10 +66,10 @@ async def test_readiness_real_mode_not_ready(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_readiness_real_mode_ready(monkeypatch):
-    """In real mode with models loaded, readiness returns 200 with READY."""
+async def test_readiness_real_mode_ready_when_models_loaded(monkeypatch, install_models):
+    """In real mode, READY means the models are actually loaded."""
     monkeypatch.setenv("AI_MOCK_MODE", "false")
-    monkeypatch.setenv("AI_MODELS_READY", "true")
+    install_models(FakeAnalyzer(), FakeSession([unit(1)]))
     headers = {"X-Service-Key": VALID_KEY}
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         response = await ac.get("/api/v1/ready", headers=headers)
@@ -78,3 +79,16 @@ async def test_readiness_real_mode_ready(monkeypatch):
     assert data["mode"] == "REAL"
     assert data["simulated"] is False
     assert data["reason"] is None
+    assert data["modelVersion"] == "arcface-512-v1"
+
+
+@pytest.mark.asyncio
+async def test_readiness_ignores_models_ready_env_flag(monkeypatch):
+    """A flag in the environment must not make the service claim readiness without loaded models."""
+    monkeypatch.setenv("AI_MOCK_MODE", "false")
+    monkeypatch.setenv("AI_MODELS_READY", "true")
+    headers = {"X-Service-Key": VALID_KEY}
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+        response = await ac.get("/api/v1/ready", headers=headers)
+    assert response.status_code == 503
+    assert response.json()["reason"] == "MODEL_NOT_READY"

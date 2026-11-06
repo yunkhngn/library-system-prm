@@ -1,4 +1,6 @@
+import logging
 import uuid
+from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
@@ -9,10 +11,24 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.v1.enrollment import router as enrollment_router
 from app.api.v1.health import router as health_router
 from app.api.v1.recognition import router as recognition_router
+from app.core.model_registry import model_registry
 from app.core.security import AiApiException
+from app.core.settings import mock_mode
 from app.models.schemas import ApiError, FieldError
 
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Load and verify the face models once at startup. A failure keeps the service up but NOT_READY."""
+    if mock_mode():
+        logging.getLogger("ai").warning("AI_MOCK_MODE=true: results are synthetic and rejected for access")
+    else:
+        model_registry.load()
+    yield
+    model_registry.unload()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="Library AI Recognition Service",
     description="Backend-to-AI internal microservice for face recognition and liveness",
     version="1.0.0",

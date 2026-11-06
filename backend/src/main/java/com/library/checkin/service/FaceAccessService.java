@@ -31,6 +31,13 @@ import java.util.UUID;
 @Slf4j
 public class FaceAccessService {
 
+    // Used when the admin has not set a recognition threshold in the operational config.
+    // ArcFace cosine distance: same person measured 0.27-0.53 on difficult frames, different people
+    // 0.89-1.12. 0.35 rejected genuine users; 0.50 keeps a wide margin to impostors.
+    static final double DEFAULT_MAX_COSINE_DISTANCE = 0.50;
+    static final double DEFAULT_MIN_DISTANCE_GAP = 0.15;
+    static final double DEFAULT_LIVENESS_MIN_SCORE = 0.90;
+
     private final AiClient aiClient;
     private final AccessService accessService;
     private final SystemConfigService systemConfigService;
@@ -137,7 +144,12 @@ public class FaceAccessService {
             throw new ApiException(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "Failed parsing challenge instructions");
         }
 
-        // 3. Inference call to AI service
+        // 3. Inference call to AI service, using the thresholds the admin configured
+        SystemConfig config = systemConfigService.getOperational();
+        double maxCosineDistance = orDefault(config.faceMaxCosineDistance(), DEFAULT_MAX_COSINE_DISTANCE);
+        double minDistanceGap = orDefault(config.faceMinDistanceGap(), DEFAULT_MIN_DISTANCE_GAP);
+        double livenessMinScore = orDefault(config.livenessMinScore(), DEFAULT_LIVENESS_MIN_SCORE);
+
         long startTime = System.currentTimeMillis();
         InternalRecognitionResult aiResult;
         try {
@@ -146,9 +158,9 @@ public class FaceAccessService {
                     challengeId,
                     instructions,
                     challenge.getModelVersion(),
-                    0.35,
-                    0.15,
-                    0.90
+                    maxCosineDistance,
+                    minDistanceGap,
+                    livenessMinScore
             );
         } catch (ApiException e) {
             int latency = (int) (System.currentTimeMillis() - startTime);
@@ -204,6 +216,10 @@ public class FaceAccessService {
         recordAttempt(requestId, kioskId, userId, "MATCHED", challenge.getModelVersion(), aiResult.cosineDistance(), aiResult.livenessScore(), latency);
 
         return result;
+    }
+
+    private static double orDefault(Double value, double fallback) {
+        return value != null ? value : fallback;
     }
 
     private void recordAttempt(

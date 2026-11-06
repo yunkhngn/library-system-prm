@@ -9,3 +9,7 @@ env
 .git
 .gitignore
 *.log
+app/models/*.onnx
+app/models/*.task
+app/models/*.part
+tests
