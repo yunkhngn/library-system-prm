@@ -10,6 +10,11 @@ import '../../../shared/widgets/app_button.dart';
 import '../../auth/application/session_controller.dart';
 import '../application/student_qr_controller.dart';
 
+// Fixed dark-on-light in both themes: inverted or low-contrast codes fail on
+// many scanners.
+const _qrBackground = Color(0xFFFFFFFF);
+const _qrForeground = Color(0xFF173B63);
+
 class StudentQrScreen extends ConsumerStatefulWidget {
   const StudentQrScreen({super.key});
 
@@ -29,10 +34,9 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState lifecycle) {
-    if (lifecycle == AppLifecycleState.resumed) {
-      ref.read(studentQrControllerProvider.notifier).tick();
-    }
-    setState(() => _visible = lifecycle == AppLifecycleState.resumed);
+    final visible = lifecycle == AppLifecycleState.resumed;
+    ref.read(studentQrControllerProvider.notifier).setVisible(visible);
+    setState(() => _visible = visible);
   }
 
   @override
@@ -75,7 +79,7 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                   height: size,
                   decoration: BoxDecoration(
                       color: state.isActive
-                          ? AppColors.surface
+                          ? _qrBackground
                           : AppColors.neutralSurface,
                       border: Border.all(color: AppColors.border),
                       borderRadius: AppRadius.controlBorder),
@@ -88,13 +92,13 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                               data: state.code!.token, size: size,
                               // Four modules of white quiet zone, even for dense JWTs.
                               padding: EdgeInsets.all(size * 4 / (modules + 8)),
-                              backgroundColor: AppColors.surface,
-                              eyeStyle: QrEyeStyle(
+                              backgroundColor: _qrBackground,
+                              eyeStyle: const QrEyeStyle(
                                   eyeShape: QrEyeShape.square,
-                                  color: AppColors.navy),
-                              dataModuleStyle: QrDataModuleStyle(
+                                  color: _qrForeground),
+                              dataModuleStyle: const QrDataModuleStyle(
                                   dataModuleShape: QrDataModuleShape.square,
-                                  color: AppColors.navy),
+                                  color: _qrForeground),
                               semanticsLabel:
                                   'Mã QR ra vào cá nhân còn hiệu lực',
                               errorStateBuilder: (_, __) => const Center(
@@ -147,8 +151,7 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                 Text('Đang tạo mã QR…', style: AppTypography.caption)
               else if (state.isActive)
                 Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Icon(Icons.schedule,
-                      size: 16, color: AppColors.warning),
+                  Icon(Icons.schedule, size: 16, color: AppColors.warning),
                   const SizedBox(width: AppSpacing.sm),
                   Text('Còn ${state.remainingSeconds} giây',
                       style: AppTypography.bodyL.copyWith(
@@ -156,8 +159,12 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
                           color: AppColors.warning)),
                 ])
               else if (state.error == null)
-                Text('Mã cũ không còn sử dụng được.',
-                    style: AppTypography.caption, textAlign: TextAlign.center),
+                Text(
+                    state.autoRenewStopped
+                        ? 'Đã dừng tự đổi mã. Nhấn "Tạo mã mới" khi bạn ra cổng.'
+                        : 'Mã cũ không còn sử dụng được.',
+                    style: AppTypography.caption,
+                    textAlign: TextAlign.center),
             ]),
           )),
         )),
@@ -192,7 +199,8 @@ class _StudentQrScreenState extends ConsumerState<StudentQrScreen>
         const SizedBox(height: AppSpacing.lg),
         Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Text('Mã chỉ dùng được một lần và tự hết hạn sau 30 giây.',
+            child: Text(
+                'Mỗi mã dùng được một lần, hiệu lực 30 giây và tự đổi mã mới trước khi hết hạn.',
                 style: AppTypography.caption)),
       ],
     );

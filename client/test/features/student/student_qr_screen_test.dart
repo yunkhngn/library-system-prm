@@ -135,20 +135,79 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets(
-      'expiry removes scannable QR and only an explicit tap issues again',
+  testWidgets('renews the code at refreshAfterSeconds without a tap',
+      (tester) async {
+    var issued = 0;
+    final repository = _Repository(() async => _token('qr-${++issued}'));
+    final container = await _pump(tester, repository);
+    await tester.pumpAndSettle();
+    _now = _now.add(const Duration(seconds: 24));
+    await tester.pump(const Duration(seconds: 1));
+    expect(repository.calls, 1);
+    _now = _now.add(const Duration(seconds: 1));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(repository.calls, 2);
+    expect(container.read(studentQrControllerProvider).code!.token, 'qr-2');
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Còn 30 giây'), findsOneWidget);
+  });
+
+  testWidgets('keeps the current code on screen while the renewal is pending',
+      (tester) async {
+    final pending = Completer<StudentQrToken>();
+    late final _Repository repository;
+    repository = _Repository(
+        () async => repository.calls == 1 ? _token() : pending.future);
+    await _pump(tester, repository);
+    await tester.pumpAndSettle();
+    _now = _now.add(const Duration(seconds: 25));
+    await tester.pump(const Duration(seconds: 1));
+    expect(repository.calls, 2);
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    pending.complete(_token('renewed'));
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('a failed renewal is not retried and the old code still expires',
+      (tester) async {
+    late final _Repository repository;
+    repository = _Repository(() async => repository.calls == 1
+        ? _token()
+        : throw const ApiException(code: ClientErrorCode.network));
+    await _pump(tester, repository);
+    await tester.pumpAndSettle();
+    _now = _now.add(const Duration(seconds: 25));
+    await tester.pump(const Duration(seconds: 1));
+    await tester.pump();
+    expect(repository.calls, 2);
+    expect(find.byType(QrImageView), findsOneWidget);
+    expect(find.text('Không tạo được mã QR'), findsOneWidget);
+    _now = _now.add(const Duration(seconds: 10));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byType(QrImageView), findsNothing);
+    expect(repository.calls, 2);
+  });
+
+  testWidgets('stops renewing after the unattended limit until a tap',
       (tester) async {
     final repository = _Repository(() async => _token());
     await _pump(tester, repository);
     await tester.pumpAndSettle();
+    for (var i = 0; i < StudentQrController.maxAutoRenewals; i++) {
+      _now = _now.add(const Duration(seconds: 25));
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+    }
+    expect(repository.calls, StudentQrController.maxAutoRenewals + 1);
     _now = _now.add(const Duration(seconds: 31));
     await tester.pump(const Duration(seconds: 1));
-    expect(find.byType(QrImageView), findsNothing);
+    expect(repository.calls, StudentQrController.maxAutoRenewals + 1);
     expect(find.text('Mã đã hết hạn'), findsOneWidget);
-    expect(repository.calls, 1);
     await tester.tap(find.text('Tạo mã mới'));
     await tester.pumpAndSettle();
-    expect(repository.calls, 2);
+    expect(repository.calls, StudentQrController.maxAutoRenewals + 2);
     expect(find.byType(QrImageView), findsOneWidget);
   });
 
@@ -204,7 +263,7 @@ void main() {
   });
 
   testWidgets(
-      'background hides the QR and resume recalculates expiry without a POST',
+      'background hides the QR without renewing; resume issues a fresh code',
       (tester) async {
     final repository = _Repository(() async => _token());
     await _pump(tester, repository);
@@ -213,10 +272,12 @@ void main() {
     await tester.pump();
     expect(find.byType(QrImageView), findsNothing);
     _now = _now.add(const Duration(minutes: 1));
+    await tester.pump(const Duration(seconds: 1));
+    expect(repository.calls, 1);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await tester.pumpAndSettle();
-    expect(find.text('Mã đã hết hạn'), findsOneWidget);
-    expect(repository.calls, 1);
+    expect(repository.calls, 2);
+    expect(find.byType(QrImageView), findsOneWidget);
   });
 
   testWidgets('narrow screen and large text fit without overflow',
