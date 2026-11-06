@@ -2019,7 +2019,8 @@ All DTOs set additionalProperties=false; requests/responses use separate types. 
 
 | Field | Required | Schema / validation |
 |---|---|---|
-| `kioskId` | Yes | `{"type":"string","format":"uuid","example":"14867700-9090-4000-8000-000000000001"}` |
+| `kioskId` | One of `kioskId` / `kioskCode` | `{"type":"string","format":"uuid","example":"14867700-9090-4000-8000-000000000001"}` |
+| `kioskCode` | One of `kioskId` / `kioskCode` | `{"type":"string","maxLength":64,"example":"KIOSK-01"}` — case-insensitive |
 | `credential` | Yes | `{"type":"string","minLength":32,"maxLength":256,"writeOnly":true}` |
 
 ### KioskPage
